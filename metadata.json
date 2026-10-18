@@ -1,0 +1,6 @@
+{
+  "name": "Mie Ayam Arsy",
+  "description": "Aplikasi katalog menu digital, pemesanan WhatsApp, dan manajemen warung Mie Ayam Arsy.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

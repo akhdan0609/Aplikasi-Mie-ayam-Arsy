@@ -1,0 +1,48 @@
+<resources>
+    <string name="app_name">Mie Ayam Arsy</string>
+    <string name="app_tagline">Mie Ayam Lezat, Gurih &amp; Nikmat</string>
+    <string name="category_all">Semua</string>
+    <string name="category_mie">Mie Ayam</string>
+    <string name="category_topping">Topping &amp; Ekstra</string>
+    <string name="category_drink">Minuman</string>
+    
+    <string name="status_available">Tersedia</string>
+    <string name="status_sold_out">Habis</string>
+    
+    <string name="cart_total">Total Pesanan</string>
+    <string name="cart_empty_title">Keranjang Masih Kosong</string>
+    <string name="cart_empty_desc">Yuk pilih menu favoritmu di atas dan tambahkan ke pesanan!</string>
+    <string name="btn_checkout_wa">Kirim Pesanan via WhatsApp</string>
+    <string name="btn_add_to_cart">Tambah</string>
+    
+    <string name="payment_method">Metode Pembayaran</string>
+    <string name="payment_cash">Tunai (Bayar di Warung)</string>
+    <string name="payment_transfer">Transfer Bank / QRIS</string>
+    <string name="payment_transfer_note">Silakan kirimkan bukti transfer setelah pesan WhatsApp ini terkirim.</string>
+    
+    <string name="customer_name_label">Nama Pemesan (Opsional)</string>
+    <string name="customer_name_placeholder">Contoh: Budi</string>
+    <string name="customer_notes_label">Catatan Tambahan (Opsional)</string>
+    <string name="customer_notes_placeholder">Contoh: Jangan pakai daun bawang, kuah dipisah</string>
+    
+    <string name="admin_mode_title">Mode Pengelola (Admin)</string>
+    <string name="admin_pin_prompt">Masukkan PIN Admin untuk mengelola menu:</string>
+    <string name="admin_pin_placeholder">PIN (Default: 1234)</string>
+    <string name="admin_active_badge">Mode Admin Aktif</string>
+    <string name="btn_exit_admin">Keluar Admin</string>
+    <string name="btn_add_menu">Tambah Menu</string>
+    <string name="btn_shop_settings">Pengaturan Warung</string>
+    
+    <string name="dialog_add_menu_title">Tambah Menu Baru</string>
+    <string name="dialog_edit_menu_title">Ubah Menu</string>
+    <string name="menu_name_label">Nama Menu</string>
+    <string name="menu_price_label">Harga (Rp)</string>
+    <string name="menu_category_label">Kategori</string>
+    <string name="menu_desc_label">Deskripsi Singkat</string>
+    <string name="menu_spice_option">Aktifkan Pilihan Level Pedas (Level 1, 2, 3)</string>
+    <string name="menu_temp_option">Aktifkan Pilihan Suhu (ICE / HOT)</string>
+    
+    <string name="btn_save">Simpan</string>
+    <string name="btn_cancel">Batal</string>
+    <string name="btn_delete">Hapus</string>
+</resources>
