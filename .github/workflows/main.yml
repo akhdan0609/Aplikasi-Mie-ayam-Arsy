@@ -61,7 +61,7 @@ jobs:
         if: failure()
         run: |
           if [ -f build.log ]; then
-            MSG=$(tail -c 6500 build.log | sed ':a;N;$!ba;s/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
+            MSG=$(grep -aE '^e: |^error:|Unresolved reference|Type mismatch|None of the following|Only safe|Overload resolution|is not a function|cannot be applied|Compilation error' build.log | head -n 100 | sed ':a;N;$!ba;s/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
             echo "::error::BUILDLOG::$MSG"
           fi
 
