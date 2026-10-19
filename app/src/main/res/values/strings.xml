@@ -27,7 +27,6 @@
     
     <string name="admin_mode_title">Mode Pengelola (Admin)</string>
     <string name="admin_pin_prompt">Masukkan PIN Admin untuk mengelola menu:</string>
-    <string name="admin_pin_placeholder">PIN (Default: 1234)</string>
     <string name="admin_active_badge">Mode Admin Aktif</string>
     <string name="btn_exit_admin">Keluar Admin</string>
     <string name="btn_add_menu">Tambah Menu</string>

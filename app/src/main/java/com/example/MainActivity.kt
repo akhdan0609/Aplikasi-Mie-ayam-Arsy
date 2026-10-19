@@ -12,6 +12,7 @@ import com.example.ui.screens.HomeScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodel.MenuViewModel
 import com.example.ui.viewmodel.MenuViewModelFactory
+import com.example.ui.viewmodel.UpdateViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -23,10 +24,11 @@ class MainActivity : ComponentActivity() {
     val repository = MenuRepository(database.menuItemDao(), database.shopConfigDao())
     val viewModelFactory = MenuViewModelFactory(repository)
     val viewModel by viewModels<MenuViewModel> { viewModelFactory }
+    val updateViewModel by viewModels<UpdateViewModel>()
 
     setContent {
       MyApplicationTheme {
-        HomeScreen(viewModel = viewModel)
+        HomeScreen(viewModel = viewModel, updateViewModel = updateViewModel)
       }
     }
   }

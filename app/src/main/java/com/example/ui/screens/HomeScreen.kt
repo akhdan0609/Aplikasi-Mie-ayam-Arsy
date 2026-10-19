@@ -61,6 +61,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,23 +77,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.BuildConfig
 import com.example.data.model.MenuItemEntity
 import com.example.ui.components.AdminEditDialog
 import com.example.ui.components.AdminPinDialog
 import com.example.ui.components.MenuCard
 import com.example.ui.components.OrderSummarySheet
 import com.example.ui.components.ShopConfigDialog
+import com.example.ui.components.UpdateDialog
 import com.example.ui.components.VariantSelectionDialog
 import com.example.ui.theme.WhatsAppGreen
 import com.example.ui.viewmodel.MenuViewModel
+import com.example.ui.viewmodel.UpdateViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
   viewModel: MenuViewModel,
+  updateViewModel: UpdateViewModel,
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
+
+  val updateState by updateViewModel.state.collectAsStateWithLifecycle()
+
+  LaunchedEffect(Unit) {
+    updateViewModel.checkForUpdate()
+  }
 
   val menuItems by viewModel.filteredMenuItems.collectAsStateWithLifecycle()
   val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
@@ -547,6 +558,19 @@ fun HomeScreen(
           namaWarung, nomorWa, infoBank, alamat, jamBuka, newPin
         )
       }
+    )
+  }
+
+  // Update Available Dialog
+  updateState.update?.let { info ->
+    UpdateDialog(
+      currentVersion = BuildConfig.VERSION_NAME,
+      info = info,
+      isDownloading = updateState.isDownloading,
+      downloadProgress = updateState.downloadProgress,
+      error = updateState.error,
+      onDismiss = { updateViewModel.dismissDialog() },
+      onUpdate = { updateViewModel.startUpdate() }
     )
   }
 

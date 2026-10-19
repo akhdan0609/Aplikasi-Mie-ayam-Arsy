@@ -58,8 +58,7 @@ fun AdminPinDialog(
             pin = it
             isError = false
           },
-          label = { Text("PIN Admin (Default: 1234)") },
-          placeholder = { Text("1234") },
+          label = { Text("PIN Admin") },
           singleLine = true,
           isError = isError,
           supportingText = {
