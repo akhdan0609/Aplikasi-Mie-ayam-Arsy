@@ -13,6 +13,8 @@ import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodel.MenuViewModel
 import com.example.ui.viewmodel.MenuViewModelFactory
 import com.example.ui.viewmodel.UpdateViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
 
@@ -21,8 +23,10 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
 
     val database = ArsyDatabase.getDatabase(applicationContext, lifecycleScope)
-    val repository = MenuRepository(database.menuItemDao(), database.shopConfigDao())
-    val viewModelFactory = MenuViewModelFactory(repository)
+    val firestore = FirebaseFirestore.getInstance()
+    val auth = FirebaseAuth.getInstance()
+    val repository = MenuRepository(firestore, database.menuItemDao(), database.shopConfigDao())
+    val viewModelFactory = MenuViewModelFactory(repository, auth)
     val viewModel by viewModels<MenuViewModel> { viewModelFactory }
     val updateViewModel by viewModels<UpdateViewModel>()
 

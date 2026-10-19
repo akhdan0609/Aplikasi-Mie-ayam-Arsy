@@ -9,13 +9,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.model.MenuItemEntity
 import com.example.data.model.ShopConfigEntity
+import com.example.data.remote.awaitResult
 import com.example.data.repository.MenuRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
@@ -32,16 +33,11 @@ data class CartItem(
 }
 
 class MenuViewModel(
-  private val repository: MenuRepository
+  private val repository: MenuRepository,
+  private val auth: FirebaseAuth
 ) : ViewModel() {
 
   val shopConfig: StateFlow<ShopConfigEntity> = repository.shopConfig
-    .filterNotNull()
-    .stateIn(
-      scope = viewModelScope,
-      started = SharingStarted.WhileSubscribed(5000),
-      initialValue = ShopConfigEntity()
-    )
 
   private val _allMenuItems = repository.allMenuItems
     .stateIn(
@@ -64,8 +60,8 @@ class MenuViewModel(
   ) { items, category, query ->
     items.filter { item ->
       val matchesCategory = (category == "Semua") || item.kategori.equals(category, ignoreCase = true)
-      val matchesQuery = query.isBlank() || 
-        item.nama.contains(query, ignoreCase = true) || 
+      val matchesQuery = query.isBlank() ||
+        item.nama.contains(query, ignoreCase = true) ||
         item.deskripsi.contains(query, ignoreCase = true)
       matchesCategory && matchesQuery
     }
@@ -125,12 +121,18 @@ class MenuViewModel(
   private val _variantDialogTitle = MutableStateFlow("")
   val variantDialogTitle: StateFlow<String> = _variantDialogTitle.asStateFlow()
 
-  // Admin Mode states
+  // Admin state
   private val _isAdminMode = MutableStateFlow(false)
   val isAdminMode: StateFlow<Boolean> = _isAdminMode.asStateFlow()
 
-  private val _showPinDialog = MutableStateFlow(false)
-  val showPinDialog: StateFlow<Boolean> = _showPinDialog.asStateFlow()
+  private val _showLoginDialog = MutableStateFlow(false)
+  val showLoginDialog: StateFlow<Boolean> = _showLoginDialog.asStateFlow()
+
+  private val _isLoggingIn = MutableStateFlow(false)
+  val isLoggingIn: StateFlow<Boolean> = _isLoggingIn.asStateFlow()
+
+  private val _loginError = MutableStateFlow<String?>(null)
+  val loginError: StateFlow<String?> = _loginError.asStateFlow()
 
   private val _showAddEditDialog = MutableStateFlow(false)
   val showAddEditDialog: StateFlow<Boolean> = _showAddEditDialog.asStateFlow()
@@ -144,8 +146,13 @@ class MenuViewModel(
   private val _showOrderSummary = MutableStateFlow(false)
   val showOrderSummary: StateFlow<Boolean> = _showOrderSummary.asStateFlow()
 
-  // Order Details
-  private val _paymentMethod = MutableStateFlow("Tunai") // "Tunai" or "Transfer"
+  private val _uiMessage = MutableStateFlow<String?>(null)
+  val uiMessage: StateFlow<String?> = _uiMessage.asStateFlow()
+
+  private val _isSyncing = MutableStateFlow(false)
+  val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+  private val _paymentMethod = MutableStateFlow("Tunai")
   val paymentMethod: StateFlow<String> = _paymentMethod.asStateFlow()
 
   private val _customerName = MutableStateFlow("")
@@ -154,16 +161,31 @@ class MenuViewModel(
   private val _customerNotes = MutableStateFlow("")
   val customerNotes: StateFlow<String> = _customerNotes.asStateFlow()
 
+  init {
+    // Tarik data terbaru dari cloud saat aplikasi dibuka.
+    refreshMenu()
+  }
+
+  fun refreshMenu() {
+    viewModelScope.launch {
+      try {
+        repository.refresh()
+      } catch (e: Exception) {
+        // Diamkan; data lama tetap tampil (offline).
+      }
+    }
+  }
+
+  fun setSelectedCategory(category: String) {
+    _selectedCategory.value = category
+  }
+
   fun setCategory(category: String) {
     _selectedCategory.value = category
   }
 
   fun setSearchQuery(query: String) {
     _searchQuery.value = query
-  }
-
-  fun setPaymentMethod(method: String) {
-    _paymentMethod.value = method
   }
 
   fun setCustomerName(name: String) {
@@ -178,6 +200,10 @@ class MenuViewModel(
     _showOrderSummary.value = show
   }
 
+  fun setPaymentMethod(method: String) {
+    _paymentMethod.value = method
+  }
+
   // Handle + button on menu card
   fun handlePlus(item: MenuItemEntity) {
     if (!item.isAvailable && !_isAdminMode.value) return
@@ -186,13 +212,13 @@ class MenuViewModel(
     val isJebew = item.hasSpiceLevel || namaLower.contains("jebew") || namaLower.contains("pedas")
     val isDrink = item.hasDrinkTemp || (
       (item.kategori.equals("Minuman", ignoreCase = true) ||
-       namaLower.contains("tea") ||
-       namaLower.contains("teh") ||
-       namaLower.contains("cappucino") ||
-       namaLower.contains("milo") ||
-       namaLower.contains("jeruk")) &&
-      !namaLower.contains("mineral")
-    )
+        namaLower.contains("tea") ||
+        namaLower.contains("teh") ||
+        namaLower.contains("cappucino") ||
+        namaLower.contains("milo") ||
+        namaLower.contains("jeruk")) &&
+        !namaLower.contains("mineral")
+      )
 
     when {
       isJebew -> {
@@ -211,10 +237,8 @@ class MenuViewModel(
     }
   }
 
-  // Handle - button on menu card
   fun handleMinus(item: MenuItemEntity) {
     val currentCart = _cartMap.value.toMutableMap()
-    // Find first matching key with quantity > 0
     val keyToDecrement = currentCart.keys.firstOrNull { it.startsWith("${item.id}_") && (currentCart[it] ?: 0) > 0 }
     if (keyToDecrement != null) {
       val count = (currentCart[keyToDecrement] ?: 0) - 1
@@ -324,27 +348,41 @@ class MenuViewModel(
     }
   }
 
-  // Admin Mode Controls
-  fun openAdminPinDialog() {
-    _showPinDialog.value = true
+  // Admin login
+  fun openAdminLoginDialog() {
+    _loginError.value = null
+    _showLoginDialog.value = true
   }
 
-  fun closeAdminPinDialog() {
-    _showPinDialog.value = false
+  fun closeAdminLoginDialog() {
+    _showLoginDialog.value = false
+    _loginError.value = null
   }
 
-  fun submitAdminPin(enteredPin: String): Boolean {
-    val currentPin = shopConfig.value.adminPin
-    return if (enteredPin == currentPin) {
+  fun loginAdmin(email: String, password: String) {
+    if (email.isBlank() || password.isBlank()) {
+      _loginError.value = "Email dan password wajib diisi."
+      return
+    }
+    viewModelScope.launch {
+      _isLoggingIn.value = true
+      _loginError.value = null
+      try {
+        auth.signInWithEmailAndPassword(email.trim(), password).awaitResult()
+      } catch (e: Exception) {
+        _loginError.value = "Login gagal. Periksa email & password."
+        _isLoggingIn.value = false
+        return@launch
+      }
       _isAdminMode.value = true
-      _showPinDialog.value = false
-      true
-    } else {
-      false
+      _showLoginDialog.value = false
+      _isLoggingIn.value = false
+      runCatching { repository.refresh() }
     }
   }
 
   fun exitAdminMode() {
+    auth.signOut()
     _isAdminMode.value = false
   }
 
@@ -374,7 +412,7 @@ class MenuViewModel(
     hasDrinkTemp: Boolean
   ) {
     viewModelScope.launch {
-      val newItem = MenuItemEntity(
+      val item = MenuItemEntity(
         id = id,
         nama = nama,
         kategori = kategori,
@@ -382,26 +420,35 @@ class MenuViewModel(
         status = status,
         deskripsi = deskripsi,
         hasSpiceLevel = hasSpiceLevel,
-        hasDrinkTemp = hasDrinkTemp
+        hasDrinkTemp = hasDrinkTemp,
+        isBestSeller = _menuItemToEdit.value?.isBestSeller ?: false
       )
-      if (id == 0) {
-        repository.insertMenuItem(newItem)
-      } else {
-        repository.updateMenuItem(newItem)
+      try {
+        if (id == 0) repository.insertMenuItem(item) else repository.updateMenuItem(item)
+        closeAddEditDialog()
+      } catch (e: Exception) {
+        _uiMessage.value = "Gagal menyimpan menu: ${e.message}"
       }
-      closeAddEditDialog()
     }
   }
 
   fun toggleItemStatus(item: MenuItemEntity) {
     viewModelScope.launch {
-      repository.toggleMenuItemStatus(item.id, item.status)
+      try {
+        repository.toggleMenuItemStatus(item.id, item.status)
+      } catch (e: Exception) {
+        _uiMessage.value = "Gagal mengubah status: ${e.message}"
+      }
     }
   }
 
   fun deleteMenuItem(item: MenuItemEntity) {
     viewModelScope.launch {
-      repository.deleteMenuItemById(item.id)
+      try {
+        repository.deleteMenuItemById(item.id)
+      } catch (e: Exception) {
+        _uiMessage.value = "Gagal menghapus menu: ${e.message}"
+      }
     }
   }
 
@@ -418,8 +465,7 @@ class MenuViewModel(
     nomorWa: String,
     infoBank: String,
     alamat: String,
-    jamBuka: String,
-    newPin: String
+    jamBuka: String
   ) {
     viewModelScope.launch {
       val updated = shopConfig.value.copy(
@@ -427,12 +473,31 @@ class MenuViewModel(
         nomorWa = nomorWa,
         infoBank = infoBank,
         alamat = alamat,
-        jamBuka = jamBuka,
-        adminPin = if (newPin.isNotBlank()) newPin else shopConfig.value.adminPin
+        jamBuka = jamBuka
       )
-      repository.updateShopConfig(updated)
-      closeShopConfigDialog()
+      try {
+        repository.updateShopConfig(updated)
+        closeShopConfigDialog()
+      } catch (e: Exception) {
+        _uiMessage.value = "Gagal menyimpan pengaturan: ${e.message}"
+      }
     }
+  }
+
+  fun migrateLocalDataToCloud() {
+    viewModelScope.launch {
+      _uiMessage.value = "Mengunggah menu ke cloud..."
+      try {
+        val count = repository.migrateLocalDataToCloud()
+        _uiMessage.value = "Berhasil mengunggah $count menu ke cloud."
+      } catch (e: Exception) {
+        _uiMessage.value = "Gagal mengunggah ke cloud: ${e.message}"
+      }
+    }
+  }
+
+  fun clearUiMessage() {
+    _uiMessage.value = null
   }
 
   companion object {
@@ -445,12 +510,13 @@ class MenuViewModel(
 }
 
 class MenuViewModelFactory(
-  private val repository: MenuRepository
+  private val repository: MenuRepository,
+  private val auth: FirebaseAuth
 ) : ViewModelProvider.Factory {
   override fun <T : ViewModel> create(modelClass: Class<T>): T {
     if (modelClass.isAssignableFrom(MenuViewModel::class.java)) {
       @Suppress("UNCHECKED_CAST")
-      return MenuViewModel(repository) as T
+      return MenuViewModel(repository, auth) as T
     }
     throw IllegalArgumentException("Unknown ViewModel class")
   }

@@ -24,15 +24,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AdminPinDialog(
+fun AdminLoginDialog(
+  isLoggingIn: Boolean,
+  error: String?,
   onDismiss: () -> Unit,
-  onSubmit: (String) -> Boolean
+  onSubmit: (String, String) -> Unit
 ) {
-  var pin by remember { mutableStateOf("") }
-  var isError by remember { mutableStateOf(false) }
+  var email by remember { mutableStateOf("") }
+  var password by remember { mutableStateOf("") }
 
   AlertDialog(
-    onDismissRequest = onDismiss,
+    onDismissRequest = { if (!isLoggingIn) onDismiss() },
     shape = RoundedCornerShape(20.dp),
     containerColor = MaterialTheme.colorScheme.surface,
     title = {
@@ -48,47 +50,51 @@ fun AdminPinDialog(
         verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         Text(
-          text = "Masukkan PIN Admin untuk mengelola menu, harga, dan pengaturan warung:",
+          text = "Masuk dengan akun admin untuk mengelola menu, harga, dan pengaturan warung:",
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         OutlinedTextField(
-          value = pin,
-          onValueChange = {
-            pin = it
-            isError = false
-          },
-          label = { Text("PIN Admin") },
+          value = email,
+          onValueChange = { email = it },
+          label = { Text("Email Admin") },
           singleLine = true,
-          isError = isError,
+          enabled = !isLoggingIn,
+          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+          modifier = Modifier.fillMaxWidth().testTag("input_admin_email"),
+          shape = RoundedCornerShape(12.dp)
+        )
+        OutlinedTextField(
+          value = password,
+          onValueChange = { password = it },
+          label = { Text("Password") },
+          singleLine = true,
+          enabled = !isLoggingIn,
+          isError = error != null,
           supportingText = {
-            if (isError) {
-              Text(text = "PIN yang dimasukkan salah!", color = MaterialTheme.colorScheme.error)
+            if (error != null) {
+              Text(text = error, color = MaterialTheme.colorScheme.error)
             }
           },
           visualTransformation = PasswordVisualTransformation(),
-          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-          modifier = Modifier.fillMaxWidth().testTag("input_admin_pin"),
+          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+          modifier = Modifier.fillMaxWidth().testTag("input_admin_password"),
           shape = RoundedCornerShape(12.dp)
         )
       }
     },
     confirmButton = {
       Button(
-        onClick = {
-          val success = onSubmit(pin)
-          if (!success) {
-            isError = true
-          }
-        },
+        onClick = { onSubmit(email, password) },
+        enabled = !isLoggingIn,
         shape = RoundedCornerShape(10.dp),
-        modifier = Modifier.testTag("btn_submit_pin")
+        modifier = Modifier.testTag("btn_submit_login")
       ) {
-        Text("Masuk")
+        Text(if (isLoggingIn) "Masuk..." else "Masuk")
       }
     },
     dismissButton = {
-      TextButton(onClick = onDismiss) {
+      TextButton(onClick = onDismiss, enabled = !isLoggingIn) {
         Text("Batal")
       }
     }

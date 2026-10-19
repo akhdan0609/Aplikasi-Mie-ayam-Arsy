@@ -55,6 +55,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -65,6 +67,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,7 +83,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.BuildConfig
 import com.example.data.model.MenuItemEntity
 import com.example.ui.components.AdminEditDialog
-import com.example.ui.components.AdminPinDialog
+import com.example.ui.components.AdminLoginDialog
 import com.example.ui.components.MenuCard
 import com.example.ui.components.OrderSummarySheet
 import com.example.ui.components.ShopConfigDialog
@@ -119,17 +122,28 @@ fun HomeScreen(
   val variantDialogTitle by viewModel.variantDialogTitle.collectAsStateWithLifecycle()
 
   val isAdminMode by viewModel.isAdminMode.collectAsStateWithLifecycle()
-  val showPinDialog by viewModel.showPinDialog.collectAsStateWithLifecycle()
+  val showLoginDialog by viewModel.showLoginDialog.collectAsStateWithLifecycle()
+  val isLoggingIn by viewModel.isLoggingIn.collectAsStateWithLifecycle()
+  val loginError by viewModel.loginError.collectAsStateWithLifecycle()
   val showAddEditDialog by viewModel.showAddEditDialog.collectAsStateWithLifecycle()
   val menuItemToEdit by viewModel.menuItemToEdit.collectAsStateWithLifecycle()
   val showShopConfigDialog by viewModel.showShopConfigDialog.collectAsStateWithLifecycle()
   val showOrderSummary by viewModel.showOrderSummary.collectAsStateWithLifecycle()
+  val uiMessage by viewModel.uiMessage.collectAsStateWithLifecycle()
 
   val paymentMethod by viewModel.paymentMethod.collectAsStateWithLifecycle()
   val customerName by viewModel.customerName.collectAsStateWithLifecycle()
   val customerNotes by viewModel.customerNotes.collectAsStateWithLifecycle()
 
   var itemToDelete by remember { mutableStateOf<MenuItemEntity?>(null) }
+
+  val snackbarHostState = remember { SnackbarHostState() }
+
+  LaunchedEffect(uiMessage) {
+    val message = uiMessage ?: return@LaunchedEffect
+    snackbarHostState.showSnackbar(message)
+    viewModel.clearUiMessage()
+  }
 
   val categories = listOf("Semua", "Mie Ayam", "Topping", "Minuman")
 
@@ -172,7 +186,7 @@ fun HomeScreen(
         actions = {
           if (!isAdminMode) {
             IconButton(
-              onClick = { viewModel.openAdminPinDialog() },
+              onClick = { viewModel.openAdminLoginDialog() },
               modifier = Modifier.testTag("btn_open_admin_login")
             ) {
               Icon(
@@ -333,6 +347,7 @@ fun HomeScreen(
         }
       }
     },
+    snackbarHost = { SnackbarHost(snackbarHostState) },
     modifier = modifier.fillMaxSize()
   ) { innerPadding ->
     Column(
@@ -368,12 +383,21 @@ fun HomeScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
               )
             }
-            Button(
-              onClick = { viewModel.openAddMenuDialog() },
-              colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
-              shape = RoundedCornerShape(8.dp)
-            ) {
-              Text("+ Menu", fontSize = 12.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+              OutlinedButton(
+                onClick = { viewModel.migrateLocalDataToCloud() },
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.testTag("btn_migrate_cloud")
+              ) {
+                Text("Unggah", fontSize = 12.sp)
+              }
+              Button(
+                onClick = { viewModel.openAddMenuDialog() },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                shape = RoundedCornerShape(8.dp)
+              ) {
+                Text("+ Menu", fontSize = 12.sp)
+              }
             }
           }
         }
@@ -527,11 +551,13 @@ fun HomeScreen(
     )
   }
 
-  // Admin PIN Dialog
-  if (showPinDialog) {
-    AdminPinDialog(
-      onDismiss = { viewModel.closeAdminPinDialog() },
-      onSubmit = { pin -> viewModel.submitAdminPin(pin) }
+  // Admin Login Dialog
+  if (showLoginDialog) {
+    AdminLoginDialog(
+      isLoggingIn = isLoggingIn,
+      error = loginError,
+      onDismiss = { viewModel.closeAdminLoginDialog() },
+      onSubmit = { email, password -> viewModel.loginAdmin(email, password) }
     )
   }
 
@@ -553,9 +579,9 @@ fun HomeScreen(
     ShopConfigDialog(
       config = shopConfig,
       onDismiss = { viewModel.closeShopConfigDialog() },
-      onSave = { namaWarung, nomorWa, infoBank, alamat, jamBuka, newPin ->
+      onSave = { namaWarung, nomorWa, infoBank, alamat, jamBuka ->
         viewModel.saveShopConfig(
-          namaWarung, nomorWa, infoBank, alamat, jamBuka, newPin
+          namaWarung, nomorWa, infoBank, alamat, jamBuka
         )
       }
     )

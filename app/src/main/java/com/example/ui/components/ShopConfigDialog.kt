@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.data.model.ShopConfigEntity
 
@@ -36,8 +35,7 @@ fun ShopConfigDialog(
     nomorWa: String,
     infoBank: String,
     alamat: String,
-    jamBuka: String,
-    newPin: String
+    jamBuka: String
   ) -> Unit
 ) {
   var namaWarung by remember { mutableStateOf(config.namaWarung) }
@@ -45,7 +43,6 @@ fun ShopConfigDialog(
   var infoBank by remember { mutableStateOf(config.infoBank) }
   var alamat by remember { mutableStateOf(config.alamat) }
   var jamBuka by remember { mutableStateOf(config.jamBuka) }
-  var newPin by remember { mutableStateOf("") }
 
   AlertDialog(
     onDismissRequest = onDismiss,
@@ -113,18 +110,6 @@ fun ShopConfigDialog(
           modifier = Modifier.fillMaxWidth().testTag("config_input_jam"),
           shape = RoundedCornerShape(12.dp)
         )
-
-        OutlinedTextField(
-          value = newPin,
-          onValueChange = { newPin = it },
-          label = { Text("Ganti PIN Admin (4 Angka)") },
-          supportingText = { Text("Kosongkan jika tidak ingin mengganti PIN") },
-          visualTransformation = PasswordVisualTransformation(),
-          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-          singleLine = true,
-          modifier = Modifier.fillMaxWidth().testTag("config_input_pin"),
-          shape = RoundedCornerShape(12.dp)
-        )
       }
     },
     confirmButton = {
@@ -135,8 +120,7 @@ fun ShopConfigDialog(
             nomorWa.trim(),
             infoBank.trim(),
             alamat.trim(),
-            jamBuka.trim(),
-            newPin.trim()
+            jamBuka.trim()
           )
         },
         shape = RoundedCornerShape(10.dp),

@@ -14,6 +14,9 @@ interface MenuItemDao {
   @Query("SELECT * FROM menu_items ORDER BY id ASC")
   fun getAllMenuItems(): Flow<List<MenuItemEntity>>
 
+  @Query("SELECT * FROM menu_items ORDER BY id ASC")
+  suspend fun getAllMenuItemsDirect(): List<MenuItemEntity>
+
   @Query("SELECT * FROM menu_items WHERE kategori = :kategori ORDER BY id ASC")
   fun getMenuItemsByCategory(kategori: String): Flow<List<MenuItemEntity>>
 

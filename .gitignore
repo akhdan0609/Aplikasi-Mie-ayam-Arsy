@@ -20,3 +20,4 @@ debug.keystore
 *.keystore
 release-keystore.jks
 my-upload-key.jks
+google-services.json
