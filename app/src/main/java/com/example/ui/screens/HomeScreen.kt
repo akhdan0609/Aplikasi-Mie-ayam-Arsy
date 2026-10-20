@@ -130,6 +130,7 @@ fun HomeScreen(
   val showShopConfigDialog by viewModel.showShopConfigDialog.collectAsStateWithLifecycle()
   val showOrderSummary by viewModel.showOrderSummary.collectAsStateWithLifecycle()
   val uiMessage by viewModel.uiMessage.collectAsStateWithLifecycle()
+  val saveError by viewModel.saveError.collectAsStateWithLifecycle()
 
   val paymentMethod by viewModel.paymentMethod.collectAsStateWithLifecycle()
   val customerName by viewModel.customerName.collectAsStateWithLifecycle()
@@ -371,14 +372,6 @@ fun HomeScreen(
           ) {
             Text("Unggah ke Cloud", fontSize = 12.sp)
           }
-          Spacer(modifier = Modifier.width(8.dp))
-          Button(
-            onClick = { viewModel.openAddMenuDialog() },
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            shape = RoundedCornerShape(8.dp)
-          ) {
-            Text("+ Menu", fontSize = 12.sp)
-          }
         }
       }
 
@@ -545,6 +538,7 @@ fun HomeScreen(
   if (showAddEditDialog) {
     AdminEditDialog(
       menuItem = menuItemToEdit,
+      saveError = saveError,
       onDismiss = { viewModel.closeAddEditDialog() },
       onSave = { id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp ->
         viewModel.saveMenuItem(

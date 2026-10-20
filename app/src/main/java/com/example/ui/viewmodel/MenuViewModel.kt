@@ -149,6 +149,9 @@ class MenuViewModel(
   private val _uiMessage = MutableStateFlow<String?>(null)
   val uiMessage: StateFlow<String?> = _uiMessage.asStateFlow()
 
+  private val _saveError = MutableStateFlow<String?>(null)
+  val saveError: StateFlow<String?> = _saveError.asStateFlow()
+
   private val _isSyncing = MutableStateFlow(false)
   val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
@@ -387,16 +390,19 @@ class MenuViewModel(
   }
 
   fun openAddMenuDialog() {
+    _saveError.value = null
     _menuItemToEdit.value = null
     _showAddEditDialog.value = true
   }
 
   fun openEditMenuDialog(item: MenuItemEntity) {
+    _saveError.value = null
     _menuItemToEdit.value = item
     _showAddEditDialog.value = true
   }
 
   fun closeAddEditDialog() {
+    _saveError.value = null
     _showAddEditDialog.value = false
     _menuItemToEdit.value = null
   }
@@ -427,7 +433,7 @@ class MenuViewModel(
         if (id == 0) repository.insertMenuItem(item) else repository.updateMenuItem(item)
         closeAddEditDialog()
       } catch (e: Exception) {
-        _uiMessage.value = "Gagal menyimpan menu: ${e.message}"
+        _saveError.value = "Gagal menyimpan menu: ${e.message}"
       }
     }
   }

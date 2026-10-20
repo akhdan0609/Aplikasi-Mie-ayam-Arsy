@@ -41,6 +41,7 @@ import com.example.data.model.MenuItemEntity
 @Composable
 fun AdminEditDialog(
   menuItem: MenuItemEntity?,
+  saveError: String?,
   onDismiss: () -> Unit,
   onSave: (
     id: Int,
@@ -85,9 +86,9 @@ fun AdminEditDialog(
           .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
       ) {
-        if (errorMessage.isNotBlank()) {
+        if (errorMessage.isNotBlank() || saveError != null) {
           Text(
-            text = errorMessage,
+            text = saveError ?: errorMessage,
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall
           )
