@@ -6,9 +6,11 @@ import com.example.data.local.ShopConfigDao
 import com.example.data.model.MenuItemEntity
 import com.example.data.model.ShopConfigEntity
 import com.example.data.remote.awaitResult
+import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -101,10 +103,47 @@ class MenuRepository(
   }
 
   suspend fun uploadMenuImage(imageUri: Uri): String {
-    val ref = storage.reference.child("menu_images/${UUID.randomUUID()}.jpg")
-    ref.putFile(imageUri).awaitResult()
-    return ref.downloadUrl.awaitResult().toString()
+    val candidates = storageCandidates()
+    var lastNotFound: Exception? = null
+    for (candidate in candidates) {
+      try {
+        val ref = candidate.reference.child("menu_images/${UUID.randomUUID()}.jpg")
+        ref.putFile(imageUri).awaitResult()
+        return ref.downloadUrl.awaitResult().toString()
+      } catch (e: Exception) {
+        if (!isBucketMissing(e)) throw e
+        lastNotFound = e
+      }
+    }
+    throw IllegalStateException(
+      "Bucket Storage tidak ditemukan (${candidates.size} percobaan). " +
+        "Pastikan menu Storage sudah diaktifkan di Firebase Console, lalu unduh ulang google-services.json.",
+      lastNotFound
+    )
   }
+
+  private fun storageCandidates(): List<FirebaseStorage> {
+    val configured = FirebaseApp.getInstance().options.storageBucket
+    val alternative = when {
+      configured.isNullOrBlank() -> null
+      configured.endsWith(".appspot.com") ->
+        configured.removeSuffix(".appspot.com") + ".firebasestorage.app"
+      configured.endsWith(".firebasestorage.app") ->
+        configured.removeSuffix(".firebasestorage.app") + ".appspot.com"
+      else -> null
+    }
+    return buildList {
+      add(storage)
+      if (!alternative.isNullOrBlank()) {
+        runCatching { FirebaseStorage.getInstance("gs://$alternative") }.getOrNull()?.let { add(it) }
+      }
+    }
+  }
+
+  private fun isBucketMissing(e: Exception): Boolean =
+    e is StorageException &&
+      (e.errorCode == StorageException.ERROR_OBJECT_NOT_FOUND ||
+        e.message?.contains("does not exist", ignoreCase = true) == true)
 
   suspend fun deleteMenuImage(imageUrl: String) {
     if (imageUrl.isBlank()) return
