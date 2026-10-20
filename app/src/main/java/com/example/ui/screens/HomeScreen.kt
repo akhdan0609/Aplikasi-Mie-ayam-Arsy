@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
@@ -174,12 +175,8 @@ fun HomeScreen(
               Text(
                 text = shopConfig.namaWarung,
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-              )
-              Text(
-                text = shopConfig.jamBuka,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
               )
             }
           }
@@ -356,6 +353,27 @@ fun HomeScreen(
         .fillMaxSize()
         .padding(innerPadding)
     ) {
+      // Jam Operasional
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+      ) {
+        Icon(
+          imageVector = Icons.Default.AccessTime,
+          contentDescription = null,
+          tint = MaterialTheme.colorScheme.primary,
+          modifier = Modifier.size(16.dp)
+        )
+        Text(
+          text = shopConfig.jamBuka,
+          style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+          color = MaterialTheme.colorScheme.onSurface
+        )
+      }
+
       // Admin Active Notice Banner
       if (isAdminMode) {
         Row(
