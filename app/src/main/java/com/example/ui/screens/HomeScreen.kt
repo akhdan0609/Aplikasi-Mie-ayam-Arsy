@@ -563,9 +563,9 @@ fun HomeScreen(
       onUploadImage = { uri, onSuccess, onError ->
         viewModel.uploadMenuImage(uri, onSuccess, onError)
       },
-      onSave = { id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageUrl ->
+      onSave = { id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageData ->
         viewModel.saveMenuItem(
-          id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageUrl
+          id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageData
         )
       }
     )

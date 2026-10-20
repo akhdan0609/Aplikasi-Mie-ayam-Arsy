@@ -1,24 +1,27 @@
 package com.example.data.repository
 
+import android.content.ContentResolver
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Base64
 import com.example.data.local.MenuItemDao
 import com.example.data.local.ShopConfigDao
 import com.example.data.model.MenuItemEntity
 import com.example.data.model.ShopConfigEntity
 import com.example.data.remote.awaitResult
-import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.UUID
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 
 class MenuRepository(
   private val firestore: FirebaseFirestore,
-  private val storage: FirebaseStorage,
+  private val contentResolver: ContentResolver,
   private val menuItemDao: MenuItemDao,
   private val shopConfigDao: ShopConfigDao
 ) {
@@ -53,10 +56,6 @@ class MenuRepository(
   }
 
   suspend fun updateMenuItem(item: MenuItemEntity) {
-    val oldItem = _allMenuItems.value.firstOrNull { it.id == item.id }
-    if (oldItem != null && oldItem.imageUrl.isNotBlank() && oldItem.imageUrl != item.imageUrl) {
-      runCatching { deleteMenuImage(oldItem.imageUrl) }
-    }
     menuCollection.document(item.id.toString()).set(item.toMap()).awaitResult()
     _allMenuItems.value = _allMenuItems.value.map { if (it.id == item.id) item else it }
   }
@@ -70,10 +69,6 @@ class MenuRepository(
   }
 
   suspend fun deleteMenuItemById(id: Int) {
-    val item = _allMenuItems.value.firstOrNull { it.id == id }
-    if (item != null && item.imageUrl.isNotBlank()) {
-      runCatching { deleteMenuImage(item.imageUrl) }
-    }
     menuCollection.document(id.toString()).delete().awaitResult()
     _allMenuItems.value = _allMenuItems.value.filterNot { it.id == id }
   }
@@ -102,56 +97,58 @@ class MenuRepository(
     return localItems.size
   }
 
-  suspend fun uploadMenuImage(imageUri: Uri): String {
-    val candidates = storageCandidates()
-    var lastNotFound: Exception? = null
-    for (candidate in candidates) {
-      try {
-        val ref = candidate.reference.child("menu_images/${UUID.randomUUID()}.jpg")
-        ref.putFile(imageUri).awaitResult()
-        return ref.downloadUrl.awaitResult().toString()
-      } catch (e: Exception) {
-        if (!isBucketMissing(e)) throw e
-        lastNotFound = e
+  suspend fun createMenuImage(imageUri: Uri): String = withContext(Dispatchers.IO) {
+    val bytes = compressImage(imageUri)
+    Base64.encodeToString(bytes, Base64.NO_WRAP)
+  }
+
+  private fun compressImage(uri: Uri): ByteArray {
+    val original = decodeSampled(uri, MAX_IMAGE_SIDE)
+    var maxSide = MAX_IMAGE_SIDE
+    var quality = 70
+    while (true) {
+      val scaled = scaleDown(original, maxSide)
+      val output = ByteArrayOutputStream()
+      scaled.compress(Bitmap.CompressFormat.JPEG, quality, output)
+      val bytes = output.toByteArray()
+      if (bytes.size <= MAX_IMAGE_BYTES || (maxSide <= 240 && quality <= 30)) return bytes
+      if (quality > 40) {
+        quality -= 10
+      } else {
+        maxSide = (maxSide * 3) / 4
+        quality = 60
       }
     }
-    throw IllegalStateException(
-      "Bucket Storage tidak ditemukan (${candidates.size} percobaan). " +
-        "Pastikan menu Storage sudah diaktifkan di Firebase Console, lalu unduh ulang google-services.json.",
-      lastNotFound
+  }
+
+  private fun decodeSampled(uri: Uri, maxSide: Int): Bitmap {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+    var sampleSize = 1
+    while (maxOf(bounds.outWidth, bounds.outHeight) / (sampleSize * 2) >= maxSide) {
+      sampleSize *= 2
+    }
+    val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+    return contentResolver.openInputStream(uri)?.use {
+      BitmapFactory.decodeStream(it, null, options)
+    } ?: throw IllegalStateException("Gambar tidak dapat dibaca dari galeri")
+  }
+
+  private fun scaleDown(bitmap: Bitmap, maxSide: Int): Bitmap {
+    val largest = maxOf(bitmap.width, bitmap.height)
+    if (largest <= maxSide) return bitmap
+    val ratio = maxSide.toFloat() / largest
+    return Bitmap.createScaledBitmap(
+      bitmap,
+      (bitmap.width * ratio).toInt().coerceAtLeast(1),
+      (bitmap.height * ratio).toInt().coerceAtLeast(1),
+      true
     )
   }
 
-  private fun storageCandidates(): List<FirebaseStorage> {
-    val configured = FirebaseApp.getInstance().options.storageBucket
-    val alternative = when {
-      configured.isNullOrBlank() -> null
-      configured.endsWith(".appspot.com") ->
-        configured.removeSuffix(".appspot.com") + ".firebasestorage.app"
-      configured.endsWith(".firebasestorage.app") ->
-        configured.removeSuffix(".firebasestorage.app") + ".appspot.com"
-      else -> null
-    }
-    return buildList {
-      add(storage)
-      if (!alternative.isNullOrBlank()) {
-        runCatching { FirebaseStorage.getInstance("gs://$alternative") }.getOrNull()?.let { add(it) }
-      }
-    }
-  }
-
-  private fun isBucketMissing(e: Exception): Boolean =
-    e is StorageException &&
-      (e.errorCode == StorageException.ERROR_OBJECT_NOT_FOUND ||
-        e.message?.contains("does not exist", ignoreCase = true) == true)
-
-  suspend fun deleteMenuImage(imageUrl: String) {
-    if (imageUrl.isBlank()) return
-    try {
-      val ref = storage.getReferenceFromUrl(imageUrl)
-      ref.delete().awaitResult()
-    } catch (_: Exception) {
-    }
+  private companion object {
+    const val MAX_IMAGE_SIDE = 720
+    const val MAX_IMAGE_BYTES = 90_000
   }
 }
 
@@ -165,7 +162,8 @@ private fun MenuItemEntity.toMap(): Map<String, Any?> = mapOf(
   "hasSpiceLevel" to hasSpiceLevel,
   "hasDrinkTemp" to hasDrinkTemp,
   "isBestSeller" to isBestSeller,
-  "imageUrl" to imageUrl
+  "imageUrl" to imageUrl,
+  "imageData" to imageData
 )
 
 private fun DocumentSnapshot.toMenuItem(): MenuItemEntity = MenuItemEntity(
@@ -178,7 +176,8 @@ private fun DocumentSnapshot.toMenuItem(): MenuItemEntity = MenuItemEntity(
   hasSpiceLevel = getBoolean("hasSpiceLevel") ?: false,
   hasDrinkTemp = getBoolean("hasDrinkTemp") ?: false,
   isBestSeller = getBoolean("isBestSeller") ?: false,
-  imageUrl = getString("imageUrl") ?: ""
+  imageUrl = getString("imageUrl") ?: "",
+  imageData = getString("imageData") ?: ""
 )
 
 private fun ShopConfigEntity.toConfigMap(): Map<String, Any?> = mapOf(

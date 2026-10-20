@@ -71,7 +71,7 @@ fun AdminEditDialog(
     deskripsi: String,
     hasSpiceLevel: Boolean,
     hasDrinkTemp: Boolean,
-    imageUrl: String
+    imageData: String
   ) -> Unit
 ) {
   val isEdit = menuItem != null
@@ -83,7 +83,7 @@ fun AdminEditDialog(
   var deskripsi by remember { mutableStateOf(menuItem?.deskripsi ?: "") }
   var hasSpiceLevel by remember { mutableStateOf(menuItem?.hasSpiceLevel ?: false) }
   var hasDrinkTemp by remember { mutableStateOf(menuItem?.hasDrinkTemp ?: false) }
-  var imageUrl by remember { mutableStateOf(menuItem?.imageUrl ?: "") }
+  var imageData by remember { mutableStateOf(menuItem?.imageData ?: "") }
   var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
   var localError by remember { mutableStateOf("") }
 
@@ -139,6 +139,7 @@ fun AdminEditDialog(
             contentAlignment = Alignment.Center
           ) {
             val displayUri = selectedImageUri
+            val decodedImage = remember(imageData) { decodeMenuImage(imageData) }
             if (displayUri != null) {
               AsyncImage(
                 model = displayUri,
@@ -146,9 +147,9 @@ fun AdminEditDialog(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxWidth()
               )
-            } else if (imageUrl.isNotBlank()) {
-              AsyncImage(
-                model = imageUrl,
+            } else if (decodedImage != null) {
+              androidx.compose.foundation.Image(
+                bitmap = decodedImage,
                 contentDescription = "Gambar menu",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxWidth()
@@ -170,11 +171,11 @@ fun AdminEditDialog(
             ) {
               Text("Pilih Gambar dari Galeri")
             }
-            if (selectedImageUri != null || imageUrl.isNotBlank()) {
+            if (selectedImageUri != null || imageData.isNotBlank()) {
               TextButton(
                 onClick = {
                   selectedImageUri = null
-                  imageUrl = ""
+                  imageData = ""
                 },
                 enabled = !isUploadingImage
               ) {
@@ -359,7 +360,7 @@ fun AdminEditDialog(
                 deskripsi.trim(),
                 hasSpiceLevel,
                 hasDrinkTemp,
-                imageUrl
+                imageData
               )
             }
           },

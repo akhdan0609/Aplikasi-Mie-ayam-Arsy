@@ -420,7 +420,7 @@ class MenuViewModel(
     deskripsi: String,
     hasSpiceLevel: Boolean,
     hasDrinkTemp: Boolean,
-    imageUrl: String = ""
+    imageData: String = ""
   ) {
     viewModelScope.launch {
       val item = MenuItemEntity(
@@ -433,7 +433,7 @@ class MenuViewModel(
         hasSpiceLevel = hasSpiceLevel,
         hasDrinkTemp = hasDrinkTemp,
         isBestSeller = _menuItemToEdit.value?.isBestSeller ?: false,
-        imageUrl = imageUrl
+        imageData = imageData
       )
       try {
         if (id == 0) repository.insertMenuItem(item) else repository.updateMenuItem(item)
@@ -516,7 +516,7 @@ class MenuViewModel(
     viewModelScope.launch {
       _isUploadingImage.value = true
       try {
-        val url = repository.uploadMenuImage(uri)
+        val url = repository.createMenuImage(uri)
         onSuccess(url)
       } catch (e: Exception) {
         onError(e.message ?: "Gagal upload gambar")

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,15 +38,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -78,6 +79,7 @@ fun MenuCard(
   val isAvailable = item.isAvailable
   val isSpicy = item.hasSpiceLevel || item.nama.contains("jebew", ignoreCase = true)
   val isDrink = item.kategori.equals("Minuman", ignoreCase = true)
+  val decodedImage = remember(item.imageData) { decodeMenuImage(item.imageData) }
 
   Card(
     modifier = modifier
@@ -122,7 +124,14 @@ fun MenuCard(
               ),
             contentAlignment = Alignment.Center
           ) {
-            if (item.imageUrl.isNotBlank()) {
+            if (decodedImage != null) {
+              Image(
+                bitmap = decodedImage,
+                contentDescription = item.nama,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+              )
+            } else if (item.imageUrl.isNotBlank()) {
               AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                   .data(item.imageUrl)
@@ -130,7 +139,7 @@ fun MenuCard(
                   .build(),
                 contentDescription = item.nama,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxSize()
               )
             } else {
               Icon(
