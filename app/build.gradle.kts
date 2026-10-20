@@ -16,8 +16,8 @@ android {
     applicationId = "com.aistudio.mieayamarsy.wkpmfz"
     minSdk = 24
     targetSdk = 36
-    versionCode = 6
-    versionName = "1.2.3"
+    versionCode = 7
+    versionName = "1.2.4"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -96,11 +96,12 @@ dependencies {
   // implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.room.ktx)
   implementation(libs.androidx.room.runtime)
-  // implementation(libs.coil.compose)
+  implementation(libs.coil.compose)
   implementation(libs.converter.moshi)
   implementation(libs.firebase.ai)
   implementation(libs.firebase.firestore)
   implementation(libs.firebase.auth)
+  implementation(libs.firebase.storage)
 
   // Uncomment ALL FOUR of the following dependencies together to use Firebase Auth and Google
   // Sign-In via Credential Manager:

@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 @Database(
   entities = [MenuItemEntity::class, ShopConfigEntity::class],
-  version = 1,
+  version = 2,
   exportSchema = false
 )
 abstract class ArsyDatabase : RoomDatabase() {
@@ -32,6 +32,7 @@ abstract class ArsyDatabase : RoomDatabase() {
           "arsy_mie_ayam.db"
         )
         .addCallback(ArsyDatabaseCallback(scope))
+        .fallbackToDestructiveMigration()
         .build()
         INSTANCE = instance
         instance

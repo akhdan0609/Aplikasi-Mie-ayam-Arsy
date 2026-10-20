@@ -46,10 +46,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.data.model.MenuItemEntity
 import com.example.ui.theme.AvailableBadge
 import com.example.ui.theme.IceBadge
@@ -107,7 +111,7 @@ fun MenuCard(
           // Food category badge icon
           Box(
             modifier = Modifier
-              .size(46.dp)
+              .size(70.dp)
               .clip(RoundedCornerShape(12.dp))
               .background(
                 when {
@@ -118,20 +122,32 @@ fun MenuCard(
               ),
             contentAlignment = Alignment.Center
           ) {
-            Icon(
-              imageVector = when {
-                isSpicy -> Icons.Default.LocalFireDepartment
-                isDrink -> Icons.Default.LocalDrink
-                else -> Icons.Default.Restaurant
-              },
-              contentDescription = item.kategori,
-              tint = when {
-                isSpicy -> SpicyBadge
-                isDrink -> IceBadge
-                else -> MaterialTheme.colorScheme.primary
-              },
-              modifier = Modifier.size(24.dp)
-            )
+            if (item.imageUrl.isNotBlank()) {
+              AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                  .data(item.imageUrl)
+                  .crossfade(true)
+                  .build(),
+                contentDescription = item.nama,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth()
+              )
+            } else {
+              Icon(
+                imageVector = when {
+                  isSpicy -> Icons.Default.LocalFireDepartment
+                  isDrink -> Icons.Default.LocalDrink
+                  else -> Icons.Default.Restaurant
+                },
+                contentDescription = item.kategori,
+                tint = when {
+                  isSpicy -> SpicyBadge
+                  isDrink -> IceBadge
+                  else -> MaterialTheme.colorScheme.primary
+                },
+                modifier = Modifier.size(28.dp)
+              )
+            }
           }
 
           Column {

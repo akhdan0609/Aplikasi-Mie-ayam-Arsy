@@ -15,6 +15,7 @@ import com.example.ui.viewmodel.MenuViewModelFactory
 import com.example.ui.viewmodel.UpdateViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 
 class MainActivity : ComponentActivity() {
 
@@ -24,8 +25,9 @@ class MainActivity : ComponentActivity() {
 
     val database = ArsyDatabase.getDatabase(applicationContext, lifecycleScope)
     val firestore = FirebaseFirestore.getInstance()
+    val storage = FirebaseStorage.getInstance()
     val auth = FirebaseAuth.getInstance()
-    val repository = MenuRepository(firestore, database.menuItemDao(), database.shopConfigDao())
+    val repository = MenuRepository(firestore, storage, database.menuItemDao(), database.shopConfigDao())
     val viewModelFactory = MenuViewModelFactory(repository, auth)
     val viewModel by viewModels<MenuViewModel> { viewModelFactory }
     val updateViewModel by viewModels<UpdateViewModel>()

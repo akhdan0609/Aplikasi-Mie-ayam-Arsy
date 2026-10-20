@@ -132,6 +132,7 @@ fun HomeScreen(
   val showOrderSummary by viewModel.showOrderSummary.collectAsStateWithLifecycle()
   val uiMessage by viewModel.uiMessage.collectAsStateWithLifecycle()
   val saveError by viewModel.saveError.collectAsStateWithLifecycle()
+  val isUploadingImage by viewModel.isUploadingImage.collectAsStateWithLifecycle()
 
   val paymentMethod by viewModel.paymentMethod.collectAsStateWithLifecycle()
   val customerName by viewModel.customerName.collectAsStateWithLifecycle()
@@ -557,10 +558,14 @@ fun HomeScreen(
     AdminEditDialog(
       menuItem = menuItemToEdit,
       saveError = saveError,
+      isUploadingImage = isUploadingImage,
       onDismiss = { viewModel.closeAddEditDialog() },
-      onSave = { id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp ->
+      onUploadImage = { uri, onSuccess, onError ->
+        viewModel.uploadMenuImage(uri, onSuccess, onError)
+      },
+      onSave = { id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageUrl ->
         viewModel.saveMenuItem(
-          id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp
+          id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageUrl
         )
       }
     )

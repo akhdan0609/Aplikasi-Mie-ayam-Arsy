@@ -152,6 +152,10 @@ class MenuViewModel(
   private val _saveError = MutableStateFlow<String?>(null)
   val saveError: StateFlow<String?> = _saveError.asStateFlow()
 
+  private val _isUploadingImage = MutableStateFlow(false)
+  val isUploadingImage: StateFlow<Boolean> = _isUploadingImage.asStateFlow()
+
+
   private val _isSyncing = MutableStateFlow(false)
   val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
@@ -415,7 +419,8 @@ class MenuViewModel(
     status: String,
     deskripsi: String,
     hasSpiceLevel: Boolean,
-    hasDrinkTemp: Boolean
+    hasDrinkTemp: Boolean,
+    imageUrl: String = ""
   ) {
     viewModelScope.launch {
       val item = MenuItemEntity(
@@ -427,7 +432,8 @@ class MenuViewModel(
         deskripsi = deskripsi,
         hasSpiceLevel = hasSpiceLevel,
         hasDrinkTemp = hasDrinkTemp,
-        isBestSeller = _menuItemToEdit.value?.isBestSeller ?: false
+        isBestSeller = _menuItemToEdit.value?.isBestSeller ?: false,
+        imageUrl = imageUrl
       )
       try {
         if (id == 0) repository.insertMenuItem(item) else repository.updateMenuItem(item)
@@ -504,6 +510,20 @@ class MenuViewModel(
 
   fun clearUiMessage() {
     _uiMessage.value = null
+  }
+
+  fun uploadMenuImage(uri: Uri, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+    viewModelScope.launch {
+      _isUploadingImage.value = true
+      try {
+        val url = repository.uploadMenuImage(uri)
+        onSuccess(url)
+      } catch (e: Exception) {
+        onError(e.message ?: "Gagal upload gambar")
+      } finally {
+        _isUploadingImage.value = false
+      }
+    }
   }
 
   companion object {

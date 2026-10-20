@@ -1,5 +1,6 @@
 package com.example.data.repository
 
+import android.net.Uri
 import com.example.data.local.MenuItemDao
 import com.example.data.local.ShopConfigDao
 import com.example.data.model.MenuItemEntity
@@ -7,12 +8,15 @@ import com.example.data.model.ShopConfigEntity
 import com.example.data.remote.awaitResult
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.UUID
 
 class MenuRepository(
   private val firestore: FirebaseFirestore,
+  private val storage: FirebaseStorage,
   private val menuItemDao: MenuItemDao,
   private val shopConfigDao: ShopConfigDao
 ) {
@@ -47,6 +51,10 @@ class MenuRepository(
   }
 
   suspend fun updateMenuItem(item: MenuItemEntity) {
+    val oldItem = _allMenuItems.value.firstOrNull { it.id == item.id }
+    if (oldItem != null && oldItem.imageUrl.isNotBlank() && oldItem.imageUrl != item.imageUrl) {
+      runCatching { deleteMenuImage(oldItem.imageUrl) }
+    }
     menuCollection.document(item.id.toString()).set(item.toMap()).awaitResult()
     _allMenuItems.value = _allMenuItems.value.map { if (it.id == item.id) item else it }
   }
@@ -60,6 +68,10 @@ class MenuRepository(
   }
 
   suspend fun deleteMenuItemById(id: Int) {
+    val item = _allMenuItems.value.firstOrNull { it.id == id }
+    if (item != null && item.imageUrl.isNotBlank()) {
+      runCatching { deleteMenuImage(item.imageUrl) }
+    }
     menuCollection.document(id.toString()).delete().awaitResult()
     _allMenuItems.value = _allMenuItems.value.filterNot { it.id == id }
   }
@@ -73,19 +85,19 @@ class MenuRepository(
    * Mengunggah seluruh menu & pengaturan warung dari database lokal (Room) ke cloud.
    * @return jumlah menu yang diunggah.
    */
-  suspend fun migrateLocalDataToCloud(): Int {
-    val localItems = menuItemDao.getAllMenuItemsDirect()
-    localItems.forEach { item ->
-      menuCollection.document(item.id.toString()).set(item.toMap()).awaitResult()
-    }
+  suspend fun uploadMenuImage(imageUri: Uri): String {
+    val ref = storage.reference.child("menu_images/${UUID.randomUUID()}.jpg")
+    ref.putFile(imageUri).awaitResult()
+    return ref.downloadUrl.awaitResult().toString()
+  }
 
-    val localConfig = shopConfigDao.getShopConfigDirect()
-    if (localConfig != null) {
-      configDocument.set(localConfig.toConfigMap()).awaitResult()
+  suspend fun deleteMenuImage(imageUrl: String) {
+    if (imageUrl.isBlank()) return
+    try {
+      val ref = storage.getReferenceFromUrl(imageUrl)
+      ref.delete().awaitResult()
+    } catch (_: Exception) {
     }
-
-    refresh()
-    return localItems.size
   }
 }
 
@@ -98,7 +110,8 @@ private fun MenuItemEntity.toMap(): Map<String, Any?> = mapOf(
   "deskripsi" to deskripsi,
   "hasSpiceLevel" to hasSpiceLevel,
   "hasDrinkTemp" to hasDrinkTemp,
-  "isBestSeller" to isBestSeller
+  "isBestSeller" to isBestSeller,
+  "imageUrl" to imageUrl
 )
 
 private fun DocumentSnapshot.toMenuItem(): MenuItemEntity = MenuItemEntity(
@@ -110,7 +123,8 @@ private fun DocumentSnapshot.toMenuItem(): MenuItemEntity = MenuItemEntity(
   deskripsi = getString("deskripsi") ?: "",
   hasSpiceLevel = getBoolean("hasSpiceLevel") ?: false,
   hasDrinkTemp = getBoolean("hasDrinkTemp") ?: false,
-  isBestSeller = getBoolean("isBestSeller") ?: false
+  isBestSeller = getBoolean("isBestSeller") ?: false,
+  imageUrl = getString("imageUrl") ?: ""
 )
 
 private fun ShopConfigEntity.toConfigMap(): Map<String, Any?> = mapOf(
