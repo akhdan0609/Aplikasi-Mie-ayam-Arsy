@@ -85,6 +85,21 @@ class MenuRepository(
    * Mengunggah seluruh menu & pengaturan warung dari database lokal (Room) ke cloud.
    * @return jumlah menu yang diunggah.
    */
+  suspend fun migrateLocalDataToCloud(): Int {
+    val localItems = menuItemDao.getAllMenuItemsDirect()
+    localItems.forEach { item ->
+      menuCollection.document(item.id.toString()).set(item.toMap()).awaitResult()
+    }
+
+    val localConfig = shopConfigDao.getShopConfigDirect()
+    if (localConfig != null) {
+      configDocument.set(localConfig.toConfigMap()).awaitResult()
+    }
+
+    refresh()
+    return localItems.size
+  }
+
   suspend fun uploadMenuImage(imageUri: Uri): String {
     val ref = storage.reference.child("menu_images/${UUID.randomUUID()}.jpg")
     ref.putFile(imageUri).awaitResult()
