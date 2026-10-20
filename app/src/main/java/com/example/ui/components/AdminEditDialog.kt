@@ -170,7 +170,7 @@ fun AdminEditDialog(
               style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
             )
             Text(
-              text = if (isAvailable) "Tersedia untuk dipesan" else "Stok Habis sementara",
+              text = if (isAvailable) "Tersedia" else "Habis",
               style = MaterialTheme.typography.labelSmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant
             )

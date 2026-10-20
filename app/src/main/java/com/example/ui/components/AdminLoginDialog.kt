@@ -57,7 +57,7 @@ fun AdminLoginDialog(
         OutlinedTextField(
           value = email,
           onValueChange = { email = it },
-          label = { Text("Email Admin") },
+          label = { Text("Email Akun Admin") },
           singleLine = true,
           enabled = !isLoggingIn,
           keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),

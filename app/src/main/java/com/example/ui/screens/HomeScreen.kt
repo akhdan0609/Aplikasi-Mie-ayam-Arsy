@@ -357,48 +357,27 @@ fun HomeScreen(
     ) {
       // Admin Active Notice Banner
       if (isAdminMode) {
-        Card(
+        Row(
           modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp),
-          shape = RoundedCornerShape(12.dp),
-          colors = CardDefaults.cardColors(containerColor = Color(0xFF2E7D32).copy(alpha = 0.1f))
+          horizontalArrangement = Arrangement.End,
+          verticalAlignment = Alignment.CenterVertically
         ) {
-          Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(horizontal = 14.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+          OutlinedButton(
+            onClick = { viewModel.migrateLocalDataToCloud() },
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.testTag("btn_migrate_cloud")
           ) {
-            Column {
-              Text(
-                text = "Mode Pengelola Aktif",
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF2E7D32)
-              )
-              Text(
-                text = "Anda dapat menambah, mengubah harga, dan atur stok",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-              )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-              OutlinedButton(
-                onClick = { viewModel.migrateLocalDataToCloud() },
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.testTag("btn_migrate_cloud")
-              ) {
-                Text("Unggah", fontSize = 12.sp)
-              }
-              Button(
-                onClick = { viewModel.openAddMenuDialog() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
-                shape = RoundedCornerShape(8.dp)
-              ) {
-                Text("+ Menu", fontSize = 12.sp)
-              }
-            }
+            Text("Unggah ke Cloud", fontSize = 12.sp)
+          }
+          Spacer(modifier = Modifier.width(8.dp))
+          Button(
+            onClick = { viewModel.openAddMenuDialog() },
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            shape = RoundedCornerShape(8.dp)
+          ) {
+            Text("+ Menu", fontSize = 12.sp)
           }
         }
       }
@@ -407,7 +386,7 @@ fun HomeScreen(
       OutlinedTextField(
         value = searchQuery,
         onValueChange = { viewModel.setSearchQuery(it) },
-        placeholder = { Text("Cari mie ayam, topping, minuman...") },
+        placeholder = { Text("Cari menu...") },
         leadingIcon = {
           Icon(imageVector = Icons.Default.Search, contentDescription = "Cari")
         },
@@ -419,10 +398,11 @@ fun HomeScreen(
           }
         },
         singleLine = true,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = OutlinedTextFieldDefaults.colors(
           focusedContainerColor = MaterialTheme.colorScheme.surface,
-          unfocusedContainerColor = MaterialTheme.colorScheme.surface
+          unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+          unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
         ),
         modifier = Modifier
           .fillMaxWidth()
