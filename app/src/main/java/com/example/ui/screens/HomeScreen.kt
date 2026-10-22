@@ -50,6 +50,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -93,6 +94,27 @@ import com.example.ui.components.VariantSelectionDialog
 import com.example.ui.theme.WhatsAppGreen
 import com.example.ui.viewmodel.MenuViewModel
 import com.example.ui.viewmodel.UpdateViewModel
+
+@Composable
+private fun MenuSectionHeader(title: String) {
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(top = 8.dp, bottom = 2.dp),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(8.dp)
+  ) {
+    Text(
+      text = title,
+      style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+      color = MaterialTheme.colorScheme.primary
+    )
+    HorizontalDivider(
+      modifier = Modifier.weight(1f),
+      color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+    )
+  }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,7 +170,40 @@ fun HomeScreen(
     viewModel.clearUiMessage()
   }
 
-  val categories = listOf("Semua", "Mie Ayam", "Topping", "Minuman")
+  val categories = listOf("Semua", "Mie Ayam", "Best Seller", "Topping", "Minuman")
+
+  val isMieAyamTab = selectedCategory == "Mie Ayam"
+  val mieMainItems = if (isMieAyamTab) {
+    menuItems.filter {
+      it.mieRelation == MenuViewModel.MIE_RELATION_MAIN ||
+        (it.kategori.equals("Mie Ayam", ignoreCase = true) &&
+          it.mieRelation == MenuViewModel.MIE_RELATION_NONE)
+    }
+  } else {
+    emptyList()
+  }
+  val mieSupportItems = if (isMieAyamTab) {
+    menuItems.filter { it.mieRelation == MenuViewModel.MIE_RELATION_SUPPORT }
+  } else {
+    emptyList()
+  }
+
+  val menuCardContent: @Composable (MenuItemEntity) -> Unit = { item ->
+    val totalQty = viewModel.getItemTotalQuantity(item.id)
+    val variantDetails = viewModel.getItemVariantDetails(item.id)
+
+    MenuCard(
+      item = item,
+      totalQty = totalQty,
+      variantDetails = variantDetails,
+      isAdminMode = isAdminMode,
+      onPlus = { viewModel.handlePlus(item) },
+      onMinus = { viewModel.handleMinus(item) },
+      onEdit = { viewModel.openEditMenuDialog(item) },
+      onToggleStatus = { viewModel.toggleItemStatus(item) },
+      onDelete = { itemToDelete = item }
+    )
+  }
 
   Scaffold(
     topBar = {
@@ -487,21 +542,17 @@ fun HomeScreen(
           ),
           verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-          items(menuItems, key = { it.id }) { item ->
-            val totalQty = viewModel.getItemTotalQuantity(item.id)
-            val variantDetails = viewModel.getItemVariantDetails(item.id)
-
-            MenuCard(
-              item = item,
-              totalQty = totalQty,
-              variantDetails = variantDetails,
-              isAdminMode = isAdminMode,
-              onPlus = { viewModel.handlePlus(item) },
-              onMinus = { viewModel.handleMinus(item) },
-              onEdit = { viewModel.openEditMenuDialog(item) },
-              onToggleStatus = { viewModel.toggleItemStatus(item) },
-              onDelete = { itemToDelete = item }
-            )
+          if (isMieAyamTab) {
+            if (mieMainItems.isNotEmpty()) {
+              item(key = "header_mie_main") { MenuSectionHeader("Menu Utama") }
+              items(mieMainItems, key = { it.id }) { item -> menuCardContent(item) }
+            }
+            if (mieSupportItems.isNotEmpty()) {
+              item(key = "header_mie_support") { MenuSectionHeader("Menu Pendukung") }
+              items(mieSupportItems, key = { it.id }) { item -> menuCardContent(item) }
+            }
+          } else {
+            items(menuItems, key = { it.id }) { item -> menuCardContent(item) }
           }
         }
       }
@@ -563,9 +614,9 @@ fun HomeScreen(
       onUploadImage = { uri, onSuccess, onError ->
         viewModel.uploadMenuImage(uri, onSuccess, onError)
       },
-      onSave = { id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageData ->
+      onSave = { id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageData, mieRelation ->
         viewModel.saveMenuItem(
-          id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageData
+          id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageData, mieRelation
         )
       }
     )

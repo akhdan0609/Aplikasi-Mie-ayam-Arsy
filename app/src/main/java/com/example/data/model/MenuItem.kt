@@ -16,7 +16,8 @@ data class MenuItemEntity(
   val hasDrinkTemp: Boolean = false, // ICE (Dingin), HOT (Panas)
   val isBestSeller: Boolean = false,
   val imageUrl: String = "",
-  val imageData: String = ""
+  val imageData: String = "",
+  val mieRelation: String = "NONE"
 ) {
   val isAvailable: Boolean
     get() = status.equals("Tersedia", ignoreCase = true)

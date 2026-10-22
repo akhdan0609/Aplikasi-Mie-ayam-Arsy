@@ -9,6 +9,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,9 +54,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.model.MenuItemEntity
+import com.example.ui.viewmodel.MenuViewModel
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AdminEditDialog(
   menuItem: MenuItemEntity?,
@@ -71,7 +76,8 @@ fun AdminEditDialog(
     deskripsi: String,
     hasSpiceLevel: Boolean,
     hasDrinkTemp: Boolean,
-    imageData: String
+    imageData: String,
+    mieRelation: String
   ) -> Unit
 ) {
   val isEdit = menuItem != null
@@ -84,6 +90,7 @@ fun AdminEditDialog(
   var hasSpiceLevel by remember { mutableStateOf(menuItem?.hasSpiceLevel ?: false) }
   var hasDrinkTemp by remember { mutableStateOf(menuItem?.hasDrinkTemp ?: false) }
   var imageData by remember { mutableStateOf(menuItem?.imageData ?: "") }
+  var mieRelation by remember { mutableStateOf(menuItem?.mieRelation ?: MenuViewModel.MIE_RELATION_NONE) }
   var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
   var localError by remember { mutableStateOf("") }
 
@@ -95,6 +102,12 @@ fun AdminEditDialog(
   }
 
   val categories = listOf("Mie Ayam", "Topping", "Minuman")
+
+  val mieRelationOptions = listOf(
+    "Tidak Terkait" to MenuViewModel.MIE_RELATION_NONE,
+    "Menu Utama Mie Ayam" to MenuViewModel.MIE_RELATION_MAIN,
+    "Menu Pendukung" to MenuViewModel.MIE_RELATION_SUPPORT
+  )
 
   AlertDialog(
     onDismissRequest = onDismiss,
@@ -224,6 +237,30 @@ fun AdminEditDialog(
           }
         }
 
+        // Tipe Menu Mie (kaitan dengan mie ayam)
+        Text(
+          text = "Tipe Menu Mie",
+          style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+        )
+        FlowRow(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+          mieRelationOptions.forEach { option ->
+            FilterChip(
+              selected = mieRelation == option.second,
+              onClick = { mieRelation = option.second },
+              label = { Text(option.first, fontSize = 12.sp) },
+              colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+              ),
+              modifier = Modifier.testTag("chip_mie_relation_${option.second}")
+            )
+          }
+        }
+
         OutlinedTextField(
           value = hargaText,
           onValueChange = { hargaText = it.filter { char -> char.isDigit() } },
@@ -343,7 +380,8 @@ fun AdminEditDialog(
                     deskripsi.trim(),
                     hasSpiceLevel,
                     hasDrinkTemp,
-                    uploadedUrl
+                    uploadedUrl,
+                    mieRelation
                   )
                 },
                 { err ->
@@ -360,7 +398,8 @@ fun AdminEditDialog(
                 deskripsi.trim(),
                 hasSpiceLevel,
                 hasDrinkTemp,
-                imageData
+                imageData,
+                mieRelation
               )
             }
           },

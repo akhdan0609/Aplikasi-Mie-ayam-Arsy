@@ -163,7 +163,8 @@ private fun MenuItemEntity.toMap(): Map<String, Any?> = mapOf(
   "hasDrinkTemp" to hasDrinkTemp,
   "isBestSeller" to isBestSeller,
   "imageUrl" to imageUrl,
-  "imageData" to imageData
+  "imageData" to imageData,
+  "mieRelation" to mieRelation
 )
 
 private fun DocumentSnapshot.toMenuItem(): MenuItemEntity = MenuItemEntity(
@@ -177,7 +178,8 @@ private fun DocumentSnapshot.toMenuItem(): MenuItemEntity = MenuItemEntity(
   hasDrinkTemp = getBoolean("hasDrinkTemp") ?: false,
   isBestSeller = getBoolean("isBestSeller") ?: false,
   imageUrl = getString("imageUrl") ?: "",
-  imageData = getString("imageData") ?: ""
+  imageData = getString("imageData") ?: "",
+  mieRelation = getString("mieRelation") ?: "NONE"
 )
 
 private fun ShopConfigEntity.toConfigMap(): Map<String, Any?> = mapOf(

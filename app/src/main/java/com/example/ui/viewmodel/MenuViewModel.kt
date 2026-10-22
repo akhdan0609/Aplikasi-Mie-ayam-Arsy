@@ -58,12 +58,21 @@ class MenuViewModel(
     _selectedCategory,
     _searchQuery
   ) { items, category, query ->
-    items.filter { item ->
-      val matchesCategory = (category == "Semua") || item.kategori.equals(category, ignoreCase = true)
+    val categoryFiltered = when (category) {
+      "Semua" -> items
+      "Best Seller" -> items.filter { it.isBestSeller }
+      "Mie Ayam" -> items.filter {
+        it.kategori.equals("Mie Ayam", ignoreCase = true) ||
+          it.mieRelation == MIE_RELATION_MAIN ||
+          it.mieRelation == MIE_RELATION_SUPPORT
+      }
+      else -> items.filter { it.kategori.equals(category, ignoreCase = true) }
+    }
+    categoryFiltered.filter { item ->
       val matchesQuery = query.isBlank() ||
         item.nama.contains(query, ignoreCase = true) ||
         item.deskripsi.contains(query, ignoreCase = true)
-      matchesCategory && matchesQuery
+      matchesQuery
     }
   }.stateIn(
     scope = viewModelScope,
@@ -420,7 +429,8 @@ class MenuViewModel(
     deskripsi: String,
     hasSpiceLevel: Boolean,
     hasDrinkTemp: Boolean,
-    imageData: String = ""
+    imageData: String = "",
+    mieRelation: String = MIE_RELATION_NONE
   ) {
     viewModelScope.launch {
       val item = MenuItemEntity(
@@ -433,7 +443,8 @@ class MenuViewModel(
         hasSpiceLevel = hasSpiceLevel,
         hasDrinkTemp = hasDrinkTemp,
         isBestSeller = _menuItemToEdit.value?.isBestSeller ?: false,
-        imageData = imageData
+        imageData = imageData,
+        mieRelation = mieRelation
       )
       try {
         if (id == 0) repository.insertMenuItem(item) else repository.updateMenuItem(item)
@@ -527,6 +538,10 @@ class MenuViewModel(
   }
 
   companion object {
+    const val MIE_RELATION_NONE = "NONE"
+    const val MIE_RELATION_MAIN = "MAIN"
+    const val MIE_RELATION_SUPPORT = "SUPPORT"
+
     fun formatRupiah(amount: Long): String {
       val format = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
       format.maximumFractionDigits = 0

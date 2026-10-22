@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 @Database(
   entities = [MenuItemEntity::class, ShopConfigEntity::class],
-  version = 3,
+  version = 4,
   exportSchema = false
 )
 abstract class ArsyDatabase : RoomDatabase() {
@@ -77,7 +77,8 @@ abstract class ArsyDatabase : RoomDatabase() {
             deskripsi = "Mie kenyal gurih dengan topping ayam kecap manis gurih, sawi segar, dan daun bawang.",
             hasSpiceLevel = false,
             hasDrinkTemp = false,
-            isBestSeller = true
+            isBestSeller = true,
+            mieRelation = "MAIN"
           ),
           MenuItemEntity(
             nama = "Mie Ayam Bakso",
@@ -87,7 +88,8 @@ abstract class ArsyDatabase : RoomDatabase() {
             deskripsi = "Mie ayam lezat ditambah 2 butir bakso sapi kenyal dan kuah kaldu hangat.",
             hasSpiceLevel = false,
             hasDrinkTemp = false,
-            isBestSeller = true
+            isBestSeller = true,
+            mieRelation = "MAIN"
           ),
           MenuItemEntity(
             nama = "Mie Ayam Pangsit",
@@ -106,7 +108,8 @@ abstract class ArsyDatabase : RoomDatabase() {
             deskripsi = "Porsi komplit dengan bakso daging sapi dan pangsit goreng renyah.",
             hasSpiceLevel = false,
             hasDrinkTemp = false,
-            isBestSeller = true
+            isBestSeller = true,
+            mieRelation = "MAIN"
           ),
           MenuItemEntity(
             nama = "Mie Jebew Spesial",
@@ -116,7 +119,8 @@ abstract class ArsyDatabase : RoomDatabase() {
             deskripsi = "Mie pedas khas dengan bumbu cabai melimpah dan minyak cabai aromatic. Wajib pilih level pedas!",
             hasSpiceLevel = true,
             hasDrinkTemp = false,
-            isBestSeller = true
+            isBestSeller = true,
+            mieRelation = "MAIN"
           ),
           MenuItemEntity(
             nama = "Mie Jebew Bakso",
@@ -125,7 +129,8 @@ abstract class ArsyDatabase : RoomDatabase() {
             status = "Tersedia",
             deskripsi = "Mie jebew pedas nendang disajikan dengan bakso sapi kenyal dan gurih.",
             hasSpiceLevel = true,
-            hasDrinkTemp = false
+            hasDrinkTemp = false,
+            mieRelation = "MAIN"
           ),
           MenuItemEntity(
             nama = "Pangsit Goreng Crispy",
@@ -134,7 +139,8 @@ abstract class ArsyDatabase : RoomDatabase() {
             status = "Tersedia",
             deskripsi = "Pangsit renyah isi ayam gurih, cocok sebagai pelengkap mie ayam.",
             hasSpiceLevel = false,
-            hasDrinkTemp = false
+            hasDrinkTemp = false,
+            mieRelation = "SUPPORT"
           ),
           MenuItemEntity(
             nama = "Bakso Kuah Porsi (5 Butir)",
@@ -143,7 +149,8 @@ abstract class ArsyDatabase : RoomDatabase() {
             status = "Tersedia",
             deskripsi = "Semangkuk bakso sapi kuah kaldu sapi asli dengan seledri dan bawang goreng.",
             hasSpiceLevel = false,
-            hasDrinkTemp = false
+            hasDrinkTemp = false,
+            mieRelation = "SUPPORT"
           ),
           MenuItemEntity(
             nama = "Ceker Pedas Manis",
@@ -152,7 +159,8 @@ abstract class ArsyDatabase : RoomDatabase() {
             status = "Tersedia",
             deskripsi = "Ceker ayam empuk dimasak bumbu pedas manis meresap sampai ke tulang.",
             hasSpiceLevel = false,
-            hasDrinkTemp = false
+            hasDrinkTemp = false,
+            mieRelation = "SUPPORT"
           ),
           MenuItemEntity(
             nama = "Es Teh Manis",
