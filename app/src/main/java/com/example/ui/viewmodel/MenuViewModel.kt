@@ -430,7 +430,8 @@ class MenuViewModel(
     hasSpiceLevel: Boolean,
     hasDrinkTemp: Boolean,
     imageData: String = "",
-    mieRelation: String = MIE_RELATION_NONE
+    mieRelation: String = MIE_RELATION_NONE,
+    isBestSeller: Boolean = false
   ) {
     viewModelScope.launch {
       val item = MenuItemEntity(
@@ -442,7 +443,7 @@ class MenuViewModel(
         deskripsi = deskripsi,
         hasSpiceLevel = hasSpiceLevel,
         hasDrinkTemp = hasDrinkTemp,
-        isBestSeller = _menuItemToEdit.value?.isBestSeller ?: false,
+        isBestSeller = isBestSeller,
         imageData = imageData,
         mieRelation = mieRelation
       )

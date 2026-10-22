@@ -77,7 +77,8 @@ fun AdminEditDialog(
     hasSpiceLevel: Boolean,
     hasDrinkTemp: Boolean,
     imageData: String,
-    mieRelation: String
+    mieRelation: String,
+    isBestSeller: Boolean
   ) -> Unit
 ) {
   val isEdit = menuItem != null
@@ -91,6 +92,7 @@ fun AdminEditDialog(
   var hasDrinkTemp by remember { mutableStateOf(menuItem?.hasDrinkTemp ?: false) }
   var imageData by remember { mutableStateOf(menuItem?.imageData ?: "") }
   var mieRelation by remember { mutableStateOf(menuItem?.mieRelation ?: MenuViewModel.MIE_RELATION_NONE) }
+  var isBestSeller by remember { mutableStateOf(menuItem?.isBestSeller ?: false) }
   var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
   var localError by remember { mutableStateOf("") }
 
@@ -261,6 +263,32 @@ fun AdminEditDialog(
           }
         }
 
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clickable { isBestSeller = !isBestSeller }
+            .testTag("admin_toggle_best_seller"),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Checkbox(
+            checked = isBestSeller,
+            onCheckedChange = { isBestSeller = it },
+            colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
+          )
+          Spacer(modifier = Modifier.width(6.dp))
+          Column {
+            Text(
+              text = "Best Seller",
+              style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+            )
+            Text(
+              text = "Tampilkan menu ini di tab Best Seller",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+          }
+        }
+
         OutlinedTextField(
           value = hargaText,
           onValueChange = { hargaText = it.filter { char -> char.isDigit() } },
@@ -381,7 +409,8 @@ fun AdminEditDialog(
                     hasSpiceLevel,
                     hasDrinkTemp,
                     uploadedUrl,
-                    mieRelation
+                    mieRelation,
+                    isBestSeller
                   )
                 },
                 { err ->
@@ -399,7 +428,8 @@ fun AdminEditDialog(
                 hasSpiceLevel,
                 hasDrinkTemp,
                 imageData,
-                mieRelation
+                mieRelation,
+                isBestSeller
               )
             }
           },
