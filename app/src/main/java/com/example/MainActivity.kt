@@ -39,7 +39,9 @@ class MainActivity : ComponentActivity() {
     val updateViewModel by viewModels<UpdateViewModel>()
 
     setContent {
-      MyApplicationTheme {
+      // Desain referensi memakai tema terang (cream/cokelat/gold);
+      // tema gelap sistem membuat kontras buruk, jadi selalu pakai skema terang.
+      MyApplicationTheme(darkTheme = false) {
         ArsyApp(viewModel = viewModel, updateViewModel = updateViewModel)
       }
     }

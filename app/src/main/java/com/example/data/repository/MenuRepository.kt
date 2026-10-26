@@ -59,10 +59,12 @@ class MenuRepository(
     val cloudItems = menuSnapshot.documents
       .map { it.toMenuItem() }
       .sortedBy { it.id }
-    // Hanya timpa dengan data cloud bila benar-benar ada isinya;
-    // jika cloud kosong / offline, biarkan data contoh (DEMO_MENU) tetap tampil.
+    // Data cloud menimpa data contoh per-id, sisanya diisi DEMO_MENU
+    // agar daftar menu tidak tampak kosong walau cloud baru berisi sedikit item.
     if (cloudItems.isNotEmpty()) {
-      _allMenuItems.value = cloudItems
+      val cloudIds = cloudItems.map { it.id }.toSet()
+      _allMenuItems.value = (cloudItems + DEMO_MENU.filter { demo -> demo.id !in cloudIds })
+        .sortedBy { it.id }
     }
 
     val configSnapshot = configDocument.get().awaitResult()
