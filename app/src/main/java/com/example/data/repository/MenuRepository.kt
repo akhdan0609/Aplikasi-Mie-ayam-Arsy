@@ -63,8 +63,10 @@ class MenuRepository(
     // agar daftar menu tidak tampak kosong walau cloud baru berisi sedikit item.
     if (cloudItems.isNotEmpty()) {
       val cloudIds = cloudItems.map { it.id }.toSet()
-      _allMenuItems.value = (cloudItems + DEMO_MENU.filter { demo -> demo.id !in cloudIds })
-        .sortedBy { it.id }
+      val cloudNames = cloudItems.map { it.nama.trim().lowercase() }.toSet()
+      _allMenuItems.value = (cloudItems + DEMO_MENU.filter { demo ->
+        demo.id !in cloudIds && demo.nama.trim().lowercase() !in cloudNames
+      }).sortedBy { it.id }
     }
 
     val configSnapshot = configDocument.get().awaitResult()
