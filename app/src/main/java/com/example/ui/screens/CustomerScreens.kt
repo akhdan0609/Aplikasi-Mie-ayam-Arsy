@@ -26,11 +26,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material.icons.filled.DeliveryDining
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -211,12 +214,17 @@ fun CustomerHomeScreen(
     item {
       LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         items(categories) { cat ->
+          val selected = cat == "Semua"
           Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(76.dp).clickable(onClick = onGoMenu)) {
-            Box(Modifier.size(60.dp).clip(RoundedCornerShape(18.dp)).background(if (cat == "Semua") MaterialTheme.colorScheme.primary else ArsyPeach), contentAlignment = Alignment.Center) {
-              Icon(Icons.Filled.Restaurant, null, tint = if (cat == "Semua") Color.White else MaterialTheme.colorScheme.primary)
+            Box(
+              Modifier.size(60.dp).clip(RoundedCornerShape(18.dp))
+                .background(if (selected) MaterialTheme.colorScheme.primary else categoryTint(cat)),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(categoryIcon(cat), null, tint = if (selected) Color.White else MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.height(6.dp))
-            Text(cat, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground, maxLines = 1)
+            Text(cat, fontSize = 12.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground, maxLines = 1)
           }
         }
       }
@@ -276,6 +284,24 @@ private fun BadgePill(text: String, icon: ImageVector) {
 private fun Modifier.border1(): Modifier = this.then(
   Modifier.background(Color.White)
 )
+
+@Composable
+private fun categoryIcon(cat: String): ImageVector = when (cat) {
+  "Semua" -> Icons.Filled.Apps
+  "Mie Ayam" -> Icons.Filled.Restaurant
+  "Best Seller" -> Icons.Filled.LocalFireDepartment
+  "Topping" -> Icons.Filled.AddCircle
+  "Minuman" -> Icons.Filled.Coffee
+  else -> Icons.Filled.Restaurant
+}
+
+private fun categoryTint(cat: String): Color = when (cat) {
+  "Mie Ayam" -> ArsyGoldSoft
+  "Best Seller" -> Color(0xFFFBD5D5)
+  "Topping" -> Color(0xFFE7E2DC)
+  "Minuman" -> ArsyPeach
+  else -> ArsyPeach
+}
 
 @Composable
 private fun HomeListItem(item: MenuItemEntity, onClick: () -> Unit, onAdd: () -> Unit) {

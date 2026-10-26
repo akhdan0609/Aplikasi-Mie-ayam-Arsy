@@ -19,6 +19,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
+/**
+ * Data contoh agar seluruh layar (Beranda, Menu, Detail, Admin) tetap terisi
+ * walaupun Firestore kosong atau perangkat sedang offline.
+ */
+private val DEMO_MENU = listOf(
+  MenuItemEntity(1, "Mie Ayam Spesial Arsy", "Mie Ayam", 22000, deskripsi = "Mie kenyal racikan bumbu khas Arsy dengan topping ayam rica gurih melimpah.", hasSpiceLevel = true, isBestSeller = true),
+  MenuItemEntity(2, "Mie Ayam Yamin Manis", "Mie Ayam", 20000, deskripsi = "Manis gurih kecap khas Arsy dengan taburan ayam gurih.", hasSpiceLevel = true, isBestSeller = true),
+  MenuItemEntity(3, "Mie Ayam Bakso", "Mie Ayam", 25000, deskripsi = "Disajikan lengkap dengan 2 buah bakso sapi urat.", hasSpiceLevel = true),
+  MenuItemEntity(4, "Mie Ayam Original", "Mie Ayam", 14000, deskripsi = "Racikan klasik mie ayam ayam cincang kuah kaldu.", hasSpiceLevel = true),
+  MenuItemEntity(5, "Pangsit Goreng Renyah", "Topping", 3000, deskripsi = "Kriuk gurih isi cacahan ayam, teman santap mie.", isBestSeller = true),
+  MenuItemEntity(6, "Pangsit Basah Lembut", "Topping", 3000, deskripsi = "Disajikan hangat dengan kuah kaldu."),
+  MenuItemEntity(7, "Bakso Sapi Halus", "Topping", 6000, deskripsi = "Daging sapi asli kenyal berserat."),
+  MenuItemEntity(8, "Bakso Urat Sapi Jumbo", "Topping", 8000, deskripsi = "Bakso urat jumbo penuh daging."),
+  MenuItemEntity(9, "Ceker Ayam Empuk", "Topping", 4000, deskripsi = "Presto lembut bumbu kecap meresap."),
+  MenuItemEntity(10, "Telur Puyuh Pindang", "Topping", 3000, deskripsi = "Manis gurih cokelat merica."),
+  MenuItemEntity(11, "Es Teh Manis Melati", "Minuman", 5000, deskripsi = "Teh melati pilihan dengan es segar.", hasDrinkTemp = true),
+  MenuItemEntity(12, "Es Jeruk Peras Segar", "Minuman", 6000, deskripsi = "Jeruk peras asli tanpa pengawet.", hasDrinkTemp = true)
+)
+
 class MenuRepository(
   private val firestore: FirebaseFirestore,
   private val contentResolver: ContentResolver,
@@ -28,7 +47,7 @@ class MenuRepository(
   private val menuCollection = firestore.collection("menu")
   private val configDocument = firestore.collection("config").document("shop")
 
-  private val _allMenuItems = MutableStateFlow<List<MenuItemEntity>>(emptyList())
+  private val _allMenuItems = MutableStateFlow(DEMO_MENU)
   val allMenuItems: StateFlow<List<MenuItemEntity>> = _allMenuItems.asStateFlow()
 
   private val _shopConfig = MutableStateFlow(ShopConfigEntity())
@@ -37,9 +56,14 @@ class MenuRepository(
   /** Menarik data terbaru dari cloud. Melempar exception jika gagal (mis. tanpa internet). */
   suspend fun refresh() {
     val menuSnapshot = menuCollection.get().awaitResult()
-    _allMenuItems.value = menuSnapshot.documents
+    val cloudItems = menuSnapshot.documents
       .map { it.toMenuItem() }
       .sortedBy { it.id }
+    // Hanya timpa dengan data cloud bila benar-benar ada isinya;
+    // jika cloud kosong / offline, biarkan data contoh (DEMO_MENU) tetap tampil.
+    if (cloudItems.isNotEmpty()) {
+      _allMenuItems.value = cloudItems
+    }
 
     val configSnapshot = configDocument.get().awaitResult()
     if (configSnapshot.exists()) {
