@@ -761,6 +761,7 @@ private fun StatusTimeline(status: String) {
 
 @Composable
 fun ProfileScreen(vm: MenuViewModel, orders: List<OrderRecord>, onOpenAdminLogin: () -> Unit) {
+  val context = LocalContext.current
   val shopConfig by vm.shopConfig.collectAsStateWithLifecycle()
   var notif by remember { mutableStateOf(true) }
   val points = orders.sumOf { it.total.toInt() } / 1000 * 10
@@ -818,7 +819,7 @@ fun ProfileScreen(vm: MenuViewModel, orders: List<OrderRecord>, onOpenAdminLogin
         ProfileRow(Icons.Filled.Favorite, "Menu Favorit Saya", "Mie Ayam Spesial Komplit", null)
         ProfileRow(Icons.Filled.Outbox, "Riwayat Pesanan", "${orders.size} pesanan sebelumnya", null)
         ProfileRow(Icons.Filled.Storefront, "Layanan Pelanggan WhatsApp", "Respons cepat & bantuan online", null) {
-          openWhatsApp(LocalContext.current, shopConfig.nomorWa, "Halo ${shopConfig.namaWarung}, saya butuh bantuan.")
+          openWhatsApp(context, shopConfig.nomorWa, "Halo ${shopConfig.namaWarung}, saya butuh bantuan.")
         }
         ProfileRow(Icons.Filled.Lock, "Masuk Mode Pengelola", "Kelola menu, stok & laporan", null, onClick = onOpenAdminLogin)
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
