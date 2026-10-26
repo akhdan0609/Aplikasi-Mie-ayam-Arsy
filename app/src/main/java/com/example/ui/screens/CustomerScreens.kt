@@ -803,7 +803,7 @@ fun ProfileScreen(
   val level = (points / 150) + 1
   val prefs = remember { context.getSharedPreferences("profil_pelanggan", Context.MODE_PRIVATE) }
   var namaPelanggan by remember { mutableStateOf(prefs.getString("nama", null) ?: "Pelanggan Arsy") }
-  var telepon by remember { mutableStateOf(prefs.getString("telepon", "")) }
+  var telepon by remember { mutableStateOf(prefs.getString("telepon", "") ?: "") }
   var showEditProfil by remember { mutableStateOf(false) }
   var showKeluar by remember { mutableStateOf(false) }
 
