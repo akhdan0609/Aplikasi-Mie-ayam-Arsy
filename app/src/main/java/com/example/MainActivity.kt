@@ -9,7 +9,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.example.data.local.ArsyDatabase
 import com.example.data.repository.MenuRepository
-import com.example.ui.screens.HomeScreen
+import com.example.ui.ArsyApp
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodel.MenuViewModel
 import com.example.ui.viewmodel.MenuViewModelFactory
@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
 
     setContent {
       MyApplicationTheme {
-        HomeScreen(viewModel = viewModel, updateViewModel = updateViewModel)
+        ArsyApp(viewModel = viewModel, updateViewModel = updateViewModel)
       }
     }
   }

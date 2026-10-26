@@ -8,6 +8,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme =
@@ -30,6 +31,9 @@ private val DarkColorScheme =
     onSurface = DarkOnSurface,
     surfaceVariant = DarkSurfaceVariant,
     onSurfaceVariant = DarkOnSurfaceVariant,
+    outline = DarkSurfaceVariant,
+    error = ChiliTertiaryDark,
+    onError = ChiliOnTertiaryDark,
   )
 
 private val LightColorScheme =
@@ -52,6 +56,9 @@ private val LightColorScheme =
     onSurface = WarmOnSurface,
     surfaceVariant = WarmSurfaceVariant,
     onSurfaceVariant = WarmOnSurfaceVariant,
+    outline = ArsyCardBorder,
+    error = ArsyDanger,
+    onError = Color.White,
   )
 
 @Composable
