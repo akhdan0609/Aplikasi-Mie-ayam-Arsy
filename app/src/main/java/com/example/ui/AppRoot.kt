@@ -158,7 +158,13 @@ fun ArsyApp(viewModel: MenuViewModel, updateViewModel: UpdateViewModel) {
           CustomerTab.Home -> CustomerHomeScreen(viewModel, onOpenDetail = { detailItem = it }, onGoMenu = { custTab = CustomerTab.Menu }, onOpenCart = { showCart = true })
           CustomerTab.Menu -> MenuBrowseScreen(viewModel, onOpenDetail = { detailItem = it })
           CustomerTab.Orders -> OrdersScreen(orders.toList(), onBackToMenu = { custTab = CustomerTab.Menu })
-          CustomerTab.Profile -> ProfileScreen(viewModel, orders.toList(), onOpenAdminLogin = { viewModel.openAdminLoginDialog() })
+          CustomerTab.Profile -> ProfileScreen(
+            viewModel,
+            orders.toList(),
+            onOpenAdminLogin = { viewModel.openAdminLoginDialog() },
+            onGoMenu = { custTab = CustomerTab.Menu },
+            onOpenOrders = { custTab = CustomerTab.Orders }
+          )
         }
       }
     }

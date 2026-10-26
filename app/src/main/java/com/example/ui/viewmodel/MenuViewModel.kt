@@ -386,7 +386,23 @@ class MenuViewModel(
       try {
         auth.signInWithEmailAndPassword(email.trim(), password).awaitResult()
       } catch (e: Exception) {
-        _loginError.value = "Login gagal. Periksa email & password."
+        val msg = e.message ?: ""
+        _loginError.value = when {
+          msg.contains("CONFIGURATION_NOT_FOUND", true) || msg.contains("configuration not found", true) ||
+            msg.contains("OPERATION_NOT_ALLOWED", true) || msg.contains("not enabled", true) ->
+            "Login email/password belum diaktifkan. Buka Firebase Console > Authentication > Sign-in method, lalu aktifkan Email/Password."
+          msg.contains("EMAIL_NOT_FOUND", true) || msg.contains("no user record", true) ->
+            "Akun admin tidak ditemukan untuk email ini. Buat dulu akun admin di Firebase Console > Authentication."
+          msg.contains("INVALID_PASSWORD", true) || msg.contains("password is invalid", true) || msg.contains("wrong password", true) ->
+            "Password salah."
+          msg.contains("INVALID_LOGIN_CREDENTIALS", true) || msg.contains("invalid credential", true) ->
+            "Email atau password salah."
+          msg.contains("TOO_MANY_ATTEMPTS", true) ->
+            "Terlalu banyak percobaan gagal. Tunggu sebentar lalu coba lagi."
+          msg.contains("network", true) || msg.contains("timeout", true) ->
+            "Koneksi internet bermasalah. Periksa jaringan Anda."
+          else -> "Login gagal. Periksa email & password."
+        }
         _isLoggingIn.value = false
         return@launch
       }

@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,6 +57,8 @@ import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -786,12 +789,23 @@ private fun StatusTimeline(status: String) {
 // ============================ PROFILE ============================
 
 @Composable
-fun ProfileScreen(vm: MenuViewModel, orders: List<OrderRecord>, onOpenAdminLogin: () -> Unit) {
+fun ProfileScreen(
+  vm: MenuViewModel,
+  orders: List<OrderRecord>,
+  onOpenAdminLogin: () -> Unit,
+  onGoMenu: () -> Unit,
+  onOpenOrders: () -> Unit
+) {
   val context = LocalContext.current
   val shopConfig by vm.shopConfig.collectAsStateWithLifecycle()
   var notif by remember { mutableStateOf(true) }
   val points = orders.sumOf { it.total.toInt() } / 1000 * 10
   val level = (points / 150) + 1
+  val prefs = remember { context.getSharedPreferences("profil_pelanggan", Context.MODE_PRIVATE) }
+  var namaPelanggan by remember { mutableStateOf(prefs.getString("nama", null) ?: "Pelanggan Arsy") }
+  var telepon by remember { mutableStateOf(prefs.getString("telepon", "")) }
+  var showEditProfil by remember { mutableStateOf(false) }
+  var showKeluar by remember { mutableStateOf(false) }
 
   LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
     item {
@@ -809,16 +823,16 @@ fun ProfileScreen(vm: MenuViewModel, orders: List<OrderRecord>, onOpenAdminLogin
           }
           Spacer(Modifier.width(12.dp))
           Column(Modifier.weight(1f)) {
-            Text("Pelanggan Arsy", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onBackground)
+            Text(namaPelanggan, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onBackground)
             Row(verticalAlignment = Alignment.CenterVertically) {
-              Text(shopConfig.nomorWa, fontSize = 12.sp, color = ArsyTextMuted)
+              Text(telepon.ifBlank { shopConfig.nomorWa }, fontSize = 12.sp, color = ArsyTextMuted)
               Spacer(Modifier.width(6.dp))
               Icon(Icons.Filled.CheckCircle, null, tint = ArsySuccess, modifier = Modifier.size(14.dp))
             }
           }
         }
         Spacer(Modifier.height(12.dp))
-        PrimaryButton(text = "Ubah Informasi Akun", onClick = {}, containerColor = ArsyPeach, contentColor = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
+        PrimaryButton(text = "Ubah Informasi Akun", onClick = { showEditProfil = true }, containerColor = ArsyPeach, contentColor = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
       }
     }
     item {
@@ -842,8 +856,8 @@ fun ProfileScreen(vm: MenuViewModel, orders: List<OrderRecord>, onOpenAdminLogin
     item { SectionHeader("Aktivitas & Bantuan") }
     item {
       WhiteCard(modifier = Modifier.padding(horizontal = 16.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
-        ProfileRow(Icons.Filled.Favorite, "Menu Favorit Saya", "Mie Ayam Spesial Komplit", null)
-        ProfileRow(Icons.Filled.Outbox, "Riwayat Pesanan", "${orders.size} pesanan sebelumnya", null)
+        ProfileRow(Icons.Filled.Favorite, "Menu Favorit Saya", "Mie Ayam Spesial Komplit", null, onClick = onGoMenu)
+        ProfileRow(Icons.Filled.Outbox, "Riwayat Pesanan", "${orders.size} pesanan sebelumnya", null, onClick = onOpenOrders)
         ProfileRow(Icons.Filled.Storefront, "Layanan Pelanggan WhatsApp", "Respons cepat & bantuan online", null) {
           openWhatsApp(context, shopConfig.nomorWa, "Halo ${shopConfig.namaWarung}, saya butuh bantuan.")
         }
@@ -860,7 +874,7 @@ fun ProfileScreen(vm: MenuViewModel, orders: List<OrderRecord>, onOpenAdminLogin
       }
     }
     item {
-      Box(Modifier.fillMaxWidth().padding(16.dp).clip(RoundedCornerShape(14.dp)).background(Color.White).clickable { vm.exitAdminMode() }.padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
+      Box(Modifier.fillMaxWidth().padding(16.dp).clip(RoundedCornerShape(14.dp)).background(Color.White).clickable { showKeluar = true }.padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
         Text("Keluar dari Akun", color = ArsyDanger, fontWeight = FontWeight.Bold, fontSize = 14.sp)
       }
     }
@@ -875,6 +889,74 @@ fun ProfileScreen(vm: MenuViewModel, orders: List<OrderRecord>, onOpenAdminLogin
       }
     }
   }
+
+  if (showEditProfil) {
+    EditProfilDialog(
+      initialNama = namaPelanggan,
+      initialTelepon = telepon.ifBlank { shopConfig.nomorWa },
+      onDismiss = { showEditProfil = false },
+      onSave = { nama, telp ->
+        prefs.edit().putString("nama", nama).putString("telepon", telp).apply()
+        namaPelanggan = nama.ifBlank { "Pelanggan Arsy" }
+        telepon = telp
+        showEditProfil = false
+        Toast.makeText(context, "Informasi akun disimpan", Toast.LENGTH_SHORT).show()
+      }
+    )
+  }
+  if (showKeluar) {
+    AlertDialog(
+      onDismissRequest = { showKeluar = false },
+      title = { Text("Keluar dari Akun?", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+      text = { Text("Informasi akun di perangkat ini akan dihapus dan profil kembali ke pelanggan umum.") },
+      confirmButton = {
+        TextButton(onClick = {
+          prefs.edit().clear().apply()
+          namaPelanggan = "Pelanggan Arsy"
+          telepon = ""
+          showKeluar = false
+          Toast.makeText(context, "Anda telah keluar dari akun", Toast.LENGTH_SHORT).show()
+        }) { Text("Keluar", color = ArsyDanger) }
+      },
+      dismissButton = { TextButton(onClick = { showKeluar = false }) { Text("Batal") } }
+    )
+  }
+}
+
+@Composable
+private fun EditProfilDialog(
+  initialNama: String,
+  initialTelepon: String,
+  onDismiss: () -> Unit,
+  onSave: (String, String) -> Unit
+) {
+  var nama by remember { mutableStateOf(initialNama) }
+  var telepon by remember { mutableStateOf(initialTelepon) }
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    title = { Text("Ubah Informasi Akun", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+    text = {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+          value = nama,
+          onValueChange = { nama = it },
+          label = { Text("Nama Pelanggan") },
+          singleLine = true,
+          modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+          value = telepon,
+          onValueChange = { telepon = it.filter { c -> c.isDigit() || c == '+' } },
+          label = { Text("No. HP / WhatsApp") },
+          singleLine = true,
+          modifier = Modifier.fillMaxWidth()
+        )
+        Text("Disimpan hanya di perangkat ini.", fontSize = 11.sp, color = ArsyTextMuted)
+      }
+    },
+    confirmButton = { TextButton(onClick = { onSave(nama.trim(), telepon.trim()) }) { Text("Simpan") } },
+    dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } }
+  )
 }
 
 @Composable
