@@ -153,7 +153,7 @@ fun CustomerHomeScreen(
 
   LazyColumn(
     modifier = Modifier.fillMaxSize(),
-    contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp)
+    contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp)
   ) {
     item {
       Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -202,20 +202,23 @@ fun CustomerHomeScreen(
 
     item {
       Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
       ) {
         Box(
-          Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(Color.White).clickable(onClick = onGoMenu).padding(horizontal = 14.dp, vertical = 14.dp)
+          Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(Color.White)
+            .border(1.dp, ArsyCardBorder, RoundedCornerShape(14.dp))
+            .clickable(onClick = onGoMenu),
+          contentAlignment = Alignment.Center
         ) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Search, null, tint = ArsyTextMuted, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-            Text("Cari mie ayam komplit, bakso, ceker...", fontSize = 13.sp, color = ArsyTextMuted)
-          }
+          Icon(Icons.Filled.Search, "Cari menu", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.width(10.dp))
-        Box(Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
+        Box(
+          Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primary).clickable(onClick = onGoMenu),
+          contentAlignment = Alignment.Center
+        ) {
           Icon(Icons.Filled.Tune, null, tint = Color.White)
         }
       }
@@ -831,7 +834,7 @@ fun OrdersScreen(orders: List<OrderRecord>, onBackToMenu: () -> Unit) {
   val done = orders.filter { it.status == "Selesai" }
   val list = if (tab == 0) active else done
 
-  LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
+  LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
     item {
       Column(Modifier.padding(16.dp)) {
         Text("Pesanan Saya", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
@@ -916,7 +919,7 @@ fun ProfileScreen(
   var showEditProfil by remember { mutableStateOf(false) }
   var showKeluar by remember { mutableStateOf(false) }
 
-  LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
+  LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
     item {
       Column(Modifier.padding(16.dp)) {
         GoldChip("AKUN PELANGGAN")
