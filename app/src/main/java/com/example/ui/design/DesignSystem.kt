@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Restaurant
@@ -73,6 +74,7 @@ enum class CustomerTab(val label: String, val icon: ImageVector) {
 enum class AdminTab(val label: String, val icon: ImageVector) {
   Orders("Pesanan", Icons.Filled.Assignment),
   MenuStock("Menu & Stok", Icons.Filled.Restaurant),
+  Promo("Promo", Icons.Filled.LocalOffer),
   Reports("Laporan", Icons.Filled.BarChart),
   Settings("Pengaturan", Icons.Filled.Settings)
 }

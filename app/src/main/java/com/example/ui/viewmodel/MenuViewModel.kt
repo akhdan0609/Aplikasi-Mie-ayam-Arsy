@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.model.MenuItemEntity
+import com.example.data.model.PromoSpesial
 import com.example.data.model.ShopConfigEntity
 import com.example.data.remote.awaitResult
 import com.example.data.repository.MenuRepository
@@ -38,6 +39,10 @@ class MenuViewModel(
 ) : ViewModel() {
 
   val shopConfig: StateFlow<ShopConfigEntity> = repository.shopConfig
+
+  val allMenuItems: StateFlow<List<MenuItemEntity>> = repository.allMenuItems
+
+  val promos: StateFlow<List<PromoSpesial>> = repository.promos
 
   private val _allMenuItems = repository.allMenuItems
     .stateIn(
@@ -148,6 +153,12 @@ class MenuViewModel(
 
   private val _menuItemToEdit = MutableStateFlow<MenuItemEntity?>(null)
   val menuItemToEdit: StateFlow<MenuItemEntity?> = _menuItemToEdit.asStateFlow()
+
+  private val _showPromoDialog = MutableStateFlow(false)
+  val showPromoDialog: StateFlow<Boolean> = _showPromoDialog.asStateFlow()
+
+  private val _promoToEdit = MutableStateFlow<PromoSpesial?>(null)
+  val promoToEdit: StateFlow<PromoSpesial?> = _promoToEdit.asStateFlow()
 
   private val _showShopConfigDialog = MutableStateFlow(false)
   val showShopConfigDialog: StateFlow<Boolean> = _showShopConfigDialog.asStateFlow()
@@ -488,6 +499,55 @@ class MenuViewModel(
         repository.deleteMenuItemById(item.id)
       } catch (e: Exception) {
         _uiMessage.value = "Gagal menghapus menu: ${e.message}"
+      }
+    }
+  }
+
+  fun openAddPromoDialog() {
+    _saveError.value = null
+    _promoToEdit.value = null
+    _showPromoDialog.value = true
+  }
+
+  fun openEditPromoDialog(promo: PromoSpesial) {
+    _saveError.value = null
+    _promoToEdit.value = promo
+    _showPromoDialog.value = true
+  }
+
+  fun closePromoDialog() {
+    _saveError.value = null
+    _showPromoDialog.value = false
+    _promoToEdit.value = null
+  }
+
+  fun savePromo(
+    id: Int,
+    judul: String,
+    deskripsi: String,
+    hargaPromo: Long,
+    hargaNormal: Long,
+    menuId: Int,
+    aktif: Boolean
+  ) {
+    viewModelScope.launch {
+      val promo = PromoSpesial(id, judul, deskripsi, hargaPromo, hargaNormal, menuId, aktif)
+      try {
+        if (id == 0) repository.insertPromo(promo) else repository.updatePromo(promo)
+        closePromoDialog()
+      } catch (e: Exception) {
+        _saveError.value = "Gagal menyimpan promo: ${e.message}"
+      }
+    }
+  }
+
+  fun deletePromo(promo: PromoSpesial) {
+    viewModelScope.launch {
+      try {
+        repository.deletePromo(promo.id)
+        _uiMessage.value = "Promo \"${promo.judul}\" dihapus."
+      } catch (e: Exception) {
+        _uiMessage.value = "Gagal menghapus promo: ${e.message}"
       }
     }
   }

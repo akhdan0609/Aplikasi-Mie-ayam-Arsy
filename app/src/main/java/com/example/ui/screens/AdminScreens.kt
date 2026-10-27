@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
@@ -31,6 +32,9 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.WifiTetheringError
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -38,6 +42,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,11 +53,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.MenuItemEntity
+import com.example.data.model.PromoSpesial
 import com.example.ui.design.EmptyState
 import com.example.ui.design.FilterPill
 import com.example.ui.design.GoldChip
@@ -234,6 +241,106 @@ private fun AdminStockRow(item: MenuItemEntity, vm: MenuViewModel) {
           colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary)
         )
         Icon(Icons.Filled.Edit, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp).clickable { vm.openEditMenuDialog(item) })
+      }
+    }
+  }
+}
+
+// ============================ ADMIN: PROMO SPESIAL ============================
+
+@Composable
+fun AdminPromoScreen(vm: MenuViewModel) {
+  val promos by vm.promos.collectAsStateWithLifecycle()
+  val menuItems by vm.allMenuItems.collectAsStateWithLifecycle()
+  var promoToDelete by remember { mutableStateOf<PromoSpesial?>(null) }
+
+  LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
+    item {
+      Box(
+        Modifier.fillMaxWidth().padding(16.dp).clip(RoundedCornerShape(20.dp))
+          .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF7A3E1E), Color(0xFFB4530A)))).padding(18.dp)
+      ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Column(Modifier.weight(1f)) {
+            Text("PROMO SPESIAL BERANDA", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f), fontWeight = FontWeight.Bold)
+            Text("${promos.count { it.aktif }} Promo Aktif", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+            Text("Kartu bisa digeser pelanggan di Beranda", fontSize = 12.sp, color = ArsyGoldSoft)
+          }
+          Box(Modifier.clip(RoundedCornerShape(14.dp)).background(Color.White.copy(alpha = 0.15f)).clickable { vm.openAddPromoDialog() }.padding(horizontal = 14.dp, vertical = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Icon(Icons.Filled.Add, null, tint = Color.White, modifier = Modifier.size(16.dp))
+              Spacer(Modifier.width(4.dp))
+              Text("Tambah", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            }
+          }
+        }
+      }
+    }
+    if (promos.isEmpty()) {
+      item { EmptyState(Icons.Filled.LocalOffer, "Belum ada promo", "Tambahkan promo agar Beranda tampil menarik.") }
+    }
+    items(promos, key = { "promo_" + it.id }) { promo ->
+      AdminPromoRow(
+        promo = promo,
+        menuItems = menuItems,
+        onEdit = { vm.openEditPromoDialog(promo) },
+        onDelete = { promoToDelete = promo },
+        onToggleActive = { vm.savePromo(promo.id, promo.judul, promo.deskripsi, promo.hargaPromo, promo.hargaNormal, promo.menuId, !promo.aktif) }
+      )
+    }
+  }
+
+  if (promoToDelete != null) {
+    AlertDialog(
+      onDismissRequest = { promoToDelete = null },
+      title = { Text("Hapus Promo") },
+      text = { Text("Hapus promo '${promoToDelete?.judul}' dari Beranda?") },
+      confirmButton = {
+        Button(
+          onClick = { promoToDelete?.let { vm.deletePromo(it) }; promoToDelete = null },
+          colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+        ) { Text("Hapus") }
+      },
+      dismissButton = { TextButton(onClick = { promoToDelete = null }) { Text("Batal") } }
+    )
+  }
+}
+
+@Composable
+private fun AdminPromoRow(
+  promo: PromoSpesial,
+  menuItems: List<MenuItemEntity>,
+  onEdit: () -> Unit,
+  onDelete: () -> Unit,
+  onToggleActive: () -> Unit
+) {
+  val linked = menuItems.firstOrNull { it.id == promo.menuId }
+  WhiteCard(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp), contentPadding = PaddingValues(12.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+      if (linked != null) {
+        MenuPhoto(linked, Modifier.size(60.dp))
+      } else {
+        Box(Modifier.size(60.dp).clip(RoundedCornerShape(14.dp)).background(ArsyPeach), contentAlignment = Alignment.Center) {
+          Icon(Icons.Filled.LocalOffer, null, tint = MaterialTheme.colorScheme.primary)
+        }
+      }
+      Spacer(Modifier.width(12.dp))
+      Column(Modifier.weight(1f)) {
+        Text(promo.judul, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onBackground)
+        Text(if (linked != null) linked.nama else "Menu utama belum dipilih", fontSize = 11.5.sp, color = ArsyTextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Text(rupiah(promo.hargaPromo), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
+          Spacer(Modifier.width(6.dp))
+          Text(rupiah(promo.hargaNormal), fontSize = 11.sp, color = ArsyTextMuted, textDecoration = TextDecoration.LineThrough)
+        }
+      }
+      Column(horizontalAlignment = Alignment.End) {
+        Switch(checked = promo.aktif, onCheckedChange = { onToggleActive() }, colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary))
+        Row {
+          Icon(Icons.Filled.Edit, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp).clickable(onClick = onEdit))
+          Spacer(Modifier.width(10.dp))
+          Icon(Icons.Filled.Delete, null, tint = ArsyDanger, modifier = Modifier.size(20.dp).clickable(onClick = onDelete))
+        }
       }
     }
   }

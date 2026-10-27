@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -86,12 +88,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
 import com.example.data.model.MenuItemEntity
+import com.example.data.model.PromoSpesial
 import com.example.ui.design.CheckRow
 import com.example.ui.design.EmptyState
 import com.example.ui.design.FilterPill
@@ -140,6 +144,8 @@ fun CustomerHomeScreen(
   val context = LocalContext.current
   val shopConfig by vm.shopConfig.collectAsStateWithLifecycle()
   val allItems by vm.filteredMenuItems.collectAsStateWithLifecycle()
+  val menuItems by vm.allMenuItems.collectAsStateWithLifecycle()
+  val promos by vm.promos.collectAsStateWithLifecycle()
   val cartCount by vm.totalCartCount.collectAsStateWithLifecycle()
 
   val prefs = remember { context.getSharedPreferences("profil_pelanggan", Context.MODE_PRIVATE) }
@@ -148,6 +154,7 @@ fun CustomerHomeScreen(
   var metodeMenu by remember { mutableStateOf(false) }
 
   val bestSellers = remember(allItems) { allItems.filter { it.isBestSeller }.ifEmpty { allItems }.take(6) }
+  val activePromos = remember(promos) { promos.filter { it.aktif } }
   val categories = listOf("Semua", "Mie Ayam", "Best Seller", "Topping", "Minuman")
 
   LazyColumn(
@@ -199,51 +206,37 @@ fun CustomerHomeScreen(
       }
     }
 
-    // Promo banner
-    item {
-      Column(Modifier.padding(horizontal = 16.dp)) {
-        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))) {
-          Image(
-            painter = painterResource(R.drawable.mie_ayam_spesial),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.matchParentSize()
-          )
-          Box(
-            Modifier.matchParentSize().background(
-              androidx.compose.ui.graphics.Brush.horizontalGradient(
-                listOf(Color(0xF0743A18), Color(0x9C8A4513), Color(0x33B4530A))
-              )
+    // Promo carousel (kartu bisa digeser)
+    if (activePromos.isNotEmpty()) {
+      item {
+        Column(Modifier.padding(horizontal = 16.dp)) {
+          val pagerState = rememberPagerState(pageCount = { activePromos.size })
+          HorizontalPager(
+            state = pagerState,
+            pageSpacing = 12.dp,
+            modifier = Modifier.fillMaxWidth()
+          ) { page ->
+            val promo = activePromos[page]
+            val linked = menuItems.firstOrNull { it.id == promo.menuId }
+            PromoBannerCard(
+              promo = promo,
+              linkedItem = linked,
+              onClaim = { if (linked != null) onOpenDetail(linked) else onGoMenu() }
             )
-          )
-          Column(Modifier.padding(18.dp)) {
-            Row {
-              GoldChip("PROMO SPESIAL")
-              Spacer(Modifier.weight(1f))
-              Text("Hari Ini Saja", fontSize = 11.sp, color = Color.White.copy(alpha = 0.85f))
-            }
+          }
+          if (activePromos.size > 1) {
             Spacer(Modifier.height(10.dp))
-            Text("Hemat Berdua Diskon 30%!", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-            Text("2x Mie Ayam Spesial + 2x Es Teh Manis segar pelepas dahaga.", fontSize = 12.sp, color = Color.White.copy(alpha = 0.9f))
-            Spacer(Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              Text("Rp 48.000", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = ArsyGoldSoft)
-              Spacer(Modifier.width(8.dp))
-              Text("Rp 68.000", fontSize = 13.sp, color = Color.White.copy(alpha = 0.6f))
-              Spacer(Modifier.weight(1f))
-              Box(Modifier.clip(RoundedCornerShape(12.dp)).background(ArsyGold).clickable(onClick = onGoMenu).padding(horizontal = 14.dp, vertical = 10.dp)) {
-                Text("Klaim & Pesan", fontWeight = FontWeight.Bold, color = Color(0xFF4A2412), fontSize = 13.sp)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+              repeat(activePromos.size) { i ->
+                if (i > 0) Spacer(Modifier.width(5.dp))
+                if (i == pagerState.currentPage) {
+                  Box(Modifier.width(18.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(MaterialTheme.colorScheme.primary))
+                } else {
+                  Box(Modifier.size(5.dp).clip(CircleShape).background(ArsyTextMuted.copy(alpha = 0.35f)))
+                }
               }
             }
           }
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-          Box(Modifier.width(18.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(MaterialTheme.colorScheme.primary))
-          Spacer(Modifier.width(5.dp))
-          Box(Modifier.size(5.dp).clip(CircleShape).background(ArsyTextMuted.copy(alpha = 0.35f)))
-          Spacer(Modifier.width(5.dp))
-          Box(Modifier.size(5.dp).clip(CircleShape).background(ArsyTextMuted.copy(alpha = 0.35f)))
         }
       }
     }
@@ -339,6 +332,49 @@ private fun categoryTint(cat: String): Color = when (cat) {
   "Topping" -> Color(0xFFE7E2DC)
   "Minuman" -> ArsyPeach
   else -> ArsyPeach
+}
+
+@Composable
+private fun PromoBannerCard(promo: PromoSpesial, linkedItem: MenuItemEntity?, onClaim: () -> Unit) {
+  Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).clickable(onClick = onClaim)) {
+    if (linkedItem != null) {
+      MenuPhoto(linkedItem, Modifier.matchParentSize(), shape = RoundedCornerShape(20.dp))
+    } else {
+      Image(
+        painter = painterResource(R.drawable.mie_ayam_spesial),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = Modifier.matchParentSize()
+      )
+    }
+    Box(
+      Modifier.matchParentSize().background(
+        androidx.compose.ui.graphics.Brush.horizontalGradient(
+          listOf(Color(0xF0743A18), Color(0x9C8A4513), Color(0x33B4530A))
+        )
+      )
+    )
+    Column(Modifier.padding(18.dp)) {
+      Row {
+        GoldChip("PROMO SPESIAL")
+        Spacer(Modifier.weight(1f))
+        Text("Hari Ini Saja", fontSize = 11.sp, color = Color.White.copy(alpha = 0.85f))
+      }
+      Spacer(Modifier.height(10.dp))
+      Text(promo.judul, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+      Text(promo.deskripsi, fontSize = 12.sp, color = Color.White.copy(alpha = 0.9f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+      Spacer(Modifier.height(12.dp))
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(rupiah(promo.hargaPromo), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = ArsyGoldSoft)
+        Spacer(Modifier.width(8.dp))
+        Text(rupiah(promo.hargaNormal), fontSize = 13.sp, color = Color.White.copy(alpha = 0.6f), textDecoration = TextDecoration.LineThrough)
+        Spacer(Modifier.weight(1f))
+        Box(Modifier.clip(RoundedCornerShape(12.dp)).background(ArsyGold).clickable(onClick = onClaim).padding(horizontal = 14.dp, vertical = 10.dp)) {
+          Text("Klaim & Pesan", fontWeight = FontWeight.Bold, color = Color(0xFF4A2412), fontSize = 13.sp)
+        }
+      }
+    }
+  }
 }
 
 @Composable

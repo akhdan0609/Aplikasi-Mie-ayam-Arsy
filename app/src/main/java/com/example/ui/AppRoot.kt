@@ -58,6 +58,7 @@ import com.example.BuildConfig
 import com.example.data.model.MenuItemEntity
 import com.example.ui.components.AdminEditDialog
 import com.example.ui.components.AdminLoginDialog
+import com.example.ui.components.PromoEditDialog
 import com.example.ui.components.UpdateDialog
 import com.example.ui.components.VariantSelectionDialog
 import com.example.ui.design.AdminTab
@@ -66,6 +67,7 @@ import com.example.ui.design.OrderRecord
 import com.example.ui.design.rupiah
 import com.example.ui.screens.AdminMenuStockScreen
 import com.example.ui.screens.AdminOrdersScreen
+import com.example.ui.screens.AdminPromoScreen
 import com.example.ui.screens.AdminReportsScreen
 import com.example.ui.screens.AdminSettingsScreen
 import com.example.ui.screens.CartScreen
@@ -114,6 +116,9 @@ fun ArsyApp(viewModel: MenuViewModel, updateViewModel: UpdateViewModel) {
   val loginError by viewModel.loginError.collectAsStateWithLifecycle()
   val showAddEditDialog by viewModel.showAddEditDialog.collectAsStateWithLifecycle()
   val menuItemToEdit by viewModel.menuItemToEdit.collectAsStateWithLifecycle()
+  val showPromoDialog by viewModel.showPromoDialog.collectAsStateWithLifecycle()
+  val promoToEdit by viewModel.promoToEdit.collectAsStateWithLifecycle()
+  val allMenuItems by viewModel.allMenuItems.collectAsStateWithLifecycle()
   val saveError by viewModel.saveError.collectAsStateWithLifecycle()
   val isUploadingImage by viewModel.isUploadingImage.collectAsStateWithLifecycle()
   val uiMessage by viewModel.uiMessage.collectAsStateWithLifecycle()
@@ -153,6 +158,7 @@ fun ArsyApp(viewModel: MenuViewModel, updateViewModel: UpdateViewModel) {
         isAdmin -> when (adminTab) {
           AdminTab.Orders -> AdminOrdersScreen(viewModel, orders.toList(), ::advance)
           AdminTab.MenuStock -> AdminMenuStockScreen(viewModel)
+          AdminTab.Promo -> AdminPromoScreen(viewModel)
           AdminTab.Reports -> AdminReportsScreen(viewModel, orders.toList())
           AdminTab.Settings -> AdminSettingsScreen(viewModel, onExitToCustomer = { viewModel.exitAdminMode() })
         }
@@ -212,6 +218,17 @@ fun ArsyApp(viewModel: MenuViewModel, updateViewModel: UpdateViewModel) {
       onUploadImage = { uri, onSuccess, onError -> viewModel.uploadMenuImage(uri, onSuccess, onError) },
       onSave = { id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageData, mieRelation, isBestSeller ->
         viewModel.saveMenuItem(id, nama, kategori, harga, status, deskripsi, hasSpiceLevel, hasDrinkTemp, imageData, mieRelation, isBestSeller)
+      }
+    )
+  }
+  if (showPromoDialog) {
+    PromoEditDialog(
+      promo = promoToEdit,
+      menuItems = allMenuItems,
+      saveError = saveError,
+      onDismiss = { viewModel.closePromoDialog() },
+      onSave = { id, judul, deskripsi, hargaPromo, hargaNormal, menuId, aktif ->
+        viewModel.savePromo(id, judul, deskripsi, hargaPromo, hargaNormal, menuId, aktif)
       }
     )
   }

@@ -8,6 +8,7 @@ import android.util.Base64
 import com.example.data.local.MenuItemDao
 import com.example.data.local.ShopConfigDao
 import com.example.data.model.MenuItemEntity
+import com.example.data.model.PromoSpesial
 import com.example.data.model.ShopConfigEntity
 import com.example.data.remote.awaitResult
 import com.google.firebase.firestore.DocumentSnapshot
@@ -38,6 +39,13 @@ private val DEMO_MENU = listOf(
   MenuItemEntity(12, "Es Jeruk Peras Segar", "Minuman", 6000, deskripsi = "Jeruk peras asli tanpa pengawet.", hasDrinkTemp = true)
 )
 
+/** Promo contoh agar carousel Beranda tetap bisa digeser walau cloud kosong. */
+private val DEMO_PROMOS = listOf(
+  PromoSpesial(1, "Hemat Berdua Diskon 30%!", "2x Mie Ayam Spesial + 2x Es Teh Manis, segar pelepas dahaga.", 48000, 68000, menuId = 1, aktif = true),
+  PromoSpesial(2, "Paket Kenyang Yamin", "Mie Ayam Yamin Bakso + Pangsit Goreng Renyah 5 pcs.", 30000, 35000, menuId = 2, aktif = true),
+  PromoSpesial(3, "Senja Manis Diskon 20%", "Mie Ayam Bakso + Es Teh Manis Melati, teman santai sore.", 24000, 30000, menuId = 3, aktif = true)
+)
+
 class MenuRepository(
   private val firestore: FirebaseFirestore,
   private val contentResolver: ContentResolver,
@@ -46,12 +54,16 @@ class MenuRepository(
 ) {
   private val menuCollection = firestore.collection("menu")
   private val configDocument = firestore.collection("config").document("shop")
+  private val promoCollection = firestore.collection("promo")
 
   private val _allMenuItems = MutableStateFlow(DEMO_MENU)
   val allMenuItems: StateFlow<List<MenuItemEntity>> = _allMenuItems.asStateFlow()
 
   private val _shopConfig = MutableStateFlow(ShopConfigEntity())
   val shopConfig: StateFlow<ShopConfigEntity> = _shopConfig.asStateFlow()
+
+  private val _promos = MutableStateFlow(DEMO_PROMOS)
+  val promos: StateFlow<List<PromoSpesial>> = _promos.asStateFlow()
 
   /** Menarik data terbaru dari cloud. Melempar exception jika gagal (mis. tanpa internet). */
   suspend fun refresh() {
@@ -67,6 +79,12 @@ class MenuRepository(
       _allMenuItems.value = (cloudItems + DEMO_MENU.filter { demo ->
         demo.id !in cloudIds && demo.nama.trim().lowercase() !in cloudNames
       }).sortedBy { it.id }
+    }
+
+    val promoSnapshot = promoCollection.get().awaitResult()
+    val cloudPromos = promoSnapshot.documents.map { it.toPromo() }.sortedBy { it.id }
+    if (cloudPromos.isNotEmpty()) {
+      _promos.value = cloudPromos
     }
 
     val configSnapshot = configDocument.get().awaitResult()
@@ -104,6 +122,23 @@ class MenuRepository(
   suspend fun updateShopConfig(config: ShopConfigEntity) {
     configDocument.set(config.toConfigMap()).awaitResult()
     _shopConfig.value = config
+  }
+
+  suspend fun insertPromo(promo: PromoSpesial) {
+    val newId = (_promos.value.maxOfOrNull { it.id } ?: 0) + 1
+    val toSave = promo.copy(id = newId)
+    promoCollection.document(newId.toString()).set(toSave.toPromoMap()).awaitResult()
+    _promos.value = (_promos.value + toSave).sortedBy { it.id }
+  }
+
+  suspend fun updatePromo(promo: PromoSpesial) {
+    promoCollection.document(promo.id.toString()).set(promo.toPromoMap()).awaitResult()
+    _promos.value = _promos.value.map { if (it.id == promo.id) promo else it }
+  }
+
+  suspend fun deletePromo(id: Int) {
+    promoCollection.document(id.toString()).delete().awaitResult()
+    _promos.value = _promos.value.filterNot { it.id == id }
   }
 
   /**
@@ -208,6 +243,26 @@ private fun DocumentSnapshot.toMenuItem(): MenuItemEntity = MenuItemEntity(
   imageUrl = getString("imageUrl") ?: "",
   imageData = getString("imageData") ?: "",
   mieRelation = getString("mieRelation") ?: "NONE"
+)
+
+private fun PromoSpesial.toPromoMap(): Map<String, Any?> = mapOf(
+  "id" to id,
+  "judul" to judul,
+  "deskripsi" to deskripsi,
+  "hargaPromo" to hargaPromo,
+  "hargaNormal" to hargaNormal,
+  "menuId" to menuId,
+  "aktif" to aktif
+)
+
+private fun DocumentSnapshot.toPromo(): PromoSpesial = PromoSpesial(
+  id = getLong("id")?.toInt() ?: id.toIntOrNull() ?: 0,
+  judul = getString("judul") ?: "",
+  deskripsi = getString("deskripsi") ?: "",
+  hargaPromo = getLong("hargaPromo") ?: 0L,
+  hargaNormal = getLong("hargaNormal") ?: 0L,
+  menuId = getLong("menuId")?.toInt() ?: 0,
+  aktif = getBoolean("aktif") ?: true
 )
 
 private fun ShopConfigEntity.toConfigMap(): Map<String, Any?> = mapOf(
