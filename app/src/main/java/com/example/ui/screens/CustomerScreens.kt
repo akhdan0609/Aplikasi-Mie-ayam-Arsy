@@ -57,7 +57,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storefront
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.Checkbox
@@ -196,30 +195,6 @@ fun CustomerHomeScreen(
               }
             }
           }
-        }
-      }
-    }
-
-    item {
-      Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Box(
-          Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(Color.White)
-            .border(1.dp, ArsyCardBorder, RoundedCornerShape(14.dp))
-            .clickable(onClick = onGoMenu),
-          contentAlignment = Alignment.Center
-        ) {
-          Icon(Icons.Filled.Search, "Cari menu", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(20.dp))
-        }
-        Spacer(Modifier.width(10.dp))
-        Box(
-          Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primary).clickable(onClick = onGoMenu),
-          contentAlignment = Alignment.Center
-        ) {
-          Icon(Icons.Filled.Tune, null, tint = Color.White)
         }
       }
     }
