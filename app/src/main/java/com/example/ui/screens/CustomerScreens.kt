@@ -443,6 +443,7 @@ private fun homeOrdersLabel(id: Int): String? = when (id) {
 private fun OpenHoursPill(jamBuka: String) {
   val jam = Regex("\\d{1,2}[.:]\\d{2}\\s*[-–]\\s*\\d{1,2}[.:]\\d{2}")
     .find(jamBuka)?.value?.replace(" ", "")?.replace('-', '–') ?: ""
+  val isOpen = jam.isBlank() || isWarungOpen(jamBuka)
   Row(
     Modifier
       .clip(RoundedCornerShape(50))
@@ -451,16 +452,30 @@ private fun OpenHoursPill(jamBuka: String) {
       .padding(horizontal = 10.dp, vertical = 6.dp),
     verticalAlignment = Alignment.CenterVertically
   ) {
-    Box(Modifier.size(6.dp).clip(CircleShape).background(ArsySuccess))
+    Box(Modifier.size(6.dp).clip(CircleShape).background(if (isOpen) ArsySuccess else ArsyDanger))
     Spacer(Modifier.width(6.dp))
     Text(
-      if (jam.isBlank()) "Buka Setiap Hari" else "Buka ($jam)",
+      when {
+        jam.isBlank() -> "Buka Setiap Hari"
+        isOpen -> "Buka ($jam)"
+        else -> "Tutup ($jam)"
+      },
       fontSize = 10.5.sp,
       fontWeight = FontWeight.SemiBold,
       color = MaterialTheme.colorScheme.onBackground,
       maxLines = 1
     )
   }
+}
+
+private fun isWarungOpen(jamBuka: String): Boolean {
+  val m = Regex("(\\d{1,2})[.:](\\d{2})\\s*[-–]\\s*(\\d{1,2})[.:](\\d{2})").find(jamBuka) ?: return true
+  val openMin = m.groupValues[1].toInt() * 60 + m.groupValues[2].toInt()
+  val closeMin = m.groupValues[3].toInt() * 60 + m.groupValues[4].toInt()
+  if (openMin == closeMin) return true
+  val now = java.util.Calendar.getInstance()
+  val nowMin = now.get(java.util.Calendar.HOUR_OF_DAY) * 60 + now.get(java.util.Calendar.MINUTE)
+  return if (closeMin > openMin) nowMin in openMin..closeMin else nowMin >= openMin || nowMin <= closeMin
 }
 
 // ============================ MENU BROWSE ============================
