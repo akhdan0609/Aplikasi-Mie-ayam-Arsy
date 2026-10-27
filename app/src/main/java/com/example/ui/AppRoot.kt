@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.RamenDining
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.AlertDialog
@@ -75,6 +76,7 @@ import com.example.ui.screens.OrdersScreen
 import com.example.ui.screens.ProfileScreen
 import com.example.ui.theme.ArsyCardBorder
 import com.example.ui.theme.ArsyCream
+import com.example.ui.theme.ArsyDanger
 import com.example.ui.theme.ArsyGoldSoft
 import com.example.ui.theme.ArsyPeach
 import com.example.ui.theme.ArsyTextMuted
@@ -258,8 +260,12 @@ private fun ArsyTopBar(
       Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
-      Box(Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
-        Icon(Icons.Filled.Restaurant, null, tint = Color.White, modifier = Modifier.size(22.dp))
+      Box(
+        Modifier.size(42.dp).clip(RoundedCornerShape(13.dp))
+          .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFFC46A1B), Color(0xFF8A4513)))),
+        contentAlignment = Alignment.Center
+      ) {
+        Icon(Icons.Filled.RamenDining, null, tint = Color.White, modifier = Modifier.size(24.dp))
       }
       Spacer(Modifier.width(10.dp))
       Column(Modifier.weight(1f)) {
@@ -272,7 +278,7 @@ private fun ArsyTopBar(
             Icon(Icons.Filled.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
           }
           if (cartCount > 0) {
-            Box(Modifier.size(18.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(18.dp).clip(CircleShape).background(ArsyDanger), contentAlignment = Alignment.Center) {
               Text("$cartCount", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
           }
@@ -311,14 +317,21 @@ private fun ArsyCustomerBottomBar(selected: CustomerTab, onSelect: (CustomerTab)
         Column(
           horizontalAlignment = Alignment.CenterHorizontally,
           modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (active) MaterialTheme.colorScheme.primary else Color.Transparent)
             .clickable { onSelect(tab) }
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
         ) {
-          Icon(tab.icon, null, tint = if (active) Color.White else ArsyTextMuted, modifier = Modifier.size(22.dp))
-          Spacer(Modifier.height(2.dp))
-          Text(tab.label, fontSize = 11.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium, color = if (active) Color.White else ArsyTextMuted)
+          Box(
+            Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(if (active) MaterialTheme.colorScheme.primary else Color.Transparent),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(tab.icon, null, tint = if (active) Color.White else ArsyTextMuted, modifier = Modifier.size(21.dp))
+          }
+          Text(
+            tab.label,
+            fontSize = 11.sp,
+            fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+            color = if (active) MaterialTheme.colorScheme.primary else ArsyTextMuted
+          )
         }
       }
     }

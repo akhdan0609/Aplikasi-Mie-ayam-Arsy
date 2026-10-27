@@ -24,11 +24,11 @@ import java.io.ByteArrayOutputStream
  * walaupun Firestore kosong atau perangkat sedang offline.
  */
 private val DEMO_MENU = listOf(
-  MenuItemEntity(1, "Mie Ayam Spesial Arsy", "Mie Ayam", 22000, deskripsi = "Mie kenyal racikan bumbu khas Arsy dengan topping ayam rica gurih melimpah.", hasSpiceLevel = true, isBestSeller = true),
-  MenuItemEntity(2, "Mie Ayam Yamin Manis", "Mie Ayam", 20000, deskripsi = "Manis gurih kecap khas Arsy dengan taburan ayam gurih.", hasSpiceLevel = true, isBestSeller = true),
+  MenuItemEntity(1, "Mie Ayam Spesial Arsy", "Mie Ayam", 22000, deskripsi = "Mie kenyal racikan bumbu khas Arsy dengan topping ayam rica gurih melimpah.", hasSpiceLevel = true, isBestSeller = true, imageData = "res:mie_ayam_spesial"),
+  MenuItemEntity(2, "Mie Ayam Yamin Bakso", "Mie Ayam", 25000, deskripsi = "Manis gurih kecap khas Arsy dengan bakso dan taburan ayam gurih.", hasSpiceLevel = true, isBestSeller = true, imageData = "res:mie_yamin"),
   MenuItemEntity(3, "Mie Ayam Bakso", "Mie Ayam", 25000, deskripsi = "Disajikan lengkap dengan 2 buah bakso sapi urat.", hasSpiceLevel = true),
   MenuItemEntity(4, "Mie Ayam Original", "Mie Ayam", 14000, deskripsi = "Racikan klasik mie ayam ayam cincang kuah kaldu.", hasSpiceLevel = true),
-  MenuItemEntity(5, "Pangsit Goreng Renyah", "Topping", 3000, deskripsi = "Kriuk gurih isi cacahan ayam, teman santap mie.", isBestSeller = true),
+  MenuItemEntity(5, "Pangsit Goreng Renyah (5 pcs)", "Topping", 10000, deskripsi = "Kriuk gurih isi cacahan ayam, teman santap mie.", isBestSeller = true, imageData = "res:pangsit_goreng"),
   MenuItemEntity(6, "Pangsit Basah Lembut", "Topping", 3000, deskripsi = "Disajikan hangat dengan kuah kaldu."),
   MenuItemEntity(7, "Bakso Sapi Halus", "Topping", 6000, deskripsi = "Daging sapi asli kenyal berserat."),
   MenuItemEntity(8, "Bakso Urat Sapi Jumbo", "Topping", 8000, deskripsi = "Bakso urat jumbo penuh daging."),

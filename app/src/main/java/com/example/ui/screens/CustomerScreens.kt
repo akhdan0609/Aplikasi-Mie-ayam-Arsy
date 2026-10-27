@@ -3,6 +3,8 @@ package com.example.ui.screens
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
@@ -48,9 +51,11 @@ import androidx.compose.material.icons.filled.Outbox
 import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode2
+import androidx.compose.material.icons.filled.RamenDining
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Verified
@@ -58,6 +63,8 @@ import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -76,12 +83,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.R
 import com.example.data.model.MenuItemEntity
 import com.example.ui.design.CheckRow
 import com.example.ui.design.EmptyState
@@ -98,6 +108,7 @@ import com.example.ui.design.StatTile
 import com.example.ui.design.TagChip
 import com.example.ui.design.WhiteCard
 import com.example.ui.design.rupiah
+import com.example.ui.theme.ArsyCardBorder
 import com.example.ui.theme.ArsyDanger
 import com.example.ui.theme.ArsyGold
 import com.example.ui.theme.ArsyGoldSoft
@@ -132,6 +143,11 @@ fun CustomerHomeScreen(
   val allItems by vm.filteredMenuItems.collectAsStateWithLifecycle()
   val cartCount by vm.totalCartCount.collectAsStateWithLifecycle()
 
+  val prefs = remember { context.getSharedPreferences("profil_pelanggan", Context.MODE_PRIVATE) }
+  val namaPelanggan = remember { prefs.getString("nama", null) }
+  var metode by remember { mutableStateOf("Makan di Tempat") }
+  var metodeMenu by remember { mutableStateOf(false) }
+
   val bestSellers = remember(allItems) { allItems.filter { it.isBestSeller }.ifEmpty { allItems }.take(6) }
   val categories = listOf("Semua", "Mie Ayam", "Best Seller", "Topping", "Minuman")
 
@@ -140,22 +156,45 @@ fun CustomerHomeScreen(
     contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp)
   ) {
     item {
-      Column(Modifier.padding(horizontal = 16.dp)) {
-        Text("Selamat Datang Kembali", fontSize = 12.sp, color = ArsyTextMuted, fontWeight = FontWeight.Medium)
-        Text("Halo, Pelanggan!", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
-        Text("Mau makan mie ayam apa hari ini?", fontSize = 13.sp, color = ArsyTextMuted)
-        Spacer(Modifier.height(12.dp))
-        WhiteCard(contentPadding = PaddingValues(14.dp)) {
+      Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
           Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(ArsyPeach), contentAlignment = Alignment.Center) {
-              Icon(Icons.Filled.Restaurant, null, tint = MaterialTheme.colorScheme.primary)
+            Box(Modifier.size(7.dp).clip(CircleShape).background(ArsyGold))
+            Spacer(Modifier.width(7.dp))
+            Text("Selamat Datang Kembali", fontSize = 11.sp, color = ArsyTextMuted, fontWeight = FontWeight.Medium)
+          }
+          Text("Halo, ${namaPelanggan ?: "Pelanggan"}!", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
+          Text("Mau makan mie ayam apa hari ini?", fontSize = 13.sp, color = ArsyTextMuted)
+        }
+        Spacer(Modifier.width(10.dp))
+        OpenHoursPill(shopConfig.jamBuka)
+      }
+      Spacer(Modifier.height(12.dp))
+      WhiteCard(contentPadding = PaddingValues(14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(ArsyPeach), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.Restaurant, null, tint = MaterialTheme.colorScheme.primary)
+          }
+          Spacer(Modifier.width(12.dp))
+          Column(Modifier.weight(1f)) {
+            Text("Metode Pemesanan", fontSize = 11.sp, color = ArsyTextMuted)
+            Text(
+              if (metode == "Makan di Tempat") "Makan di Tempat • Meja 04" else metode,
+              fontSize = 13.sp,
+              fontWeight = FontWeight.Bold,
+              color = MaterialTheme.colorScheme.onBackground
+            )
+          }
+          Box(Modifier.clip(RoundedCornerShape(50)).background(Color.White).border(1.dp, ArsyCardBorder, RoundedCornerShape(50)).clickable { metodeMenu = true }.padding(horizontal = 12.dp, vertical = 7.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Text("Ganti", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+              Icon(Icons.Filled.ArrowDropDown, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
             }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-              Text("Metode Pemesanan", fontSize = 11.sp, color = ArsyTextMuted)
-              Text("Makan di Tempat • Meja 04", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+            DropdownMenu(expanded = metodeMenu, onDismissRequest = { metodeMenu = false }) {
+              listOf("Makan di Tempat", "Take Away", "Delivery").forEach { m ->
+                DropdownMenuItem(text = { Text(m) }, onClick = { metode = m; metodeMenu = false })
+              }
             }
-            GoldChip("Ganti")
           }
         }
       }
@@ -184,31 +223,49 @@ fun CustomerHomeScreen(
 
     // Promo banner
     item {
-      Box(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-          .clip(RoundedCornerShape(20.dp))
-          .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF7A3E1E), Color(0xFFB4530A))))
-          .padding(18.dp)
-      ) {
-        Column {
-          Row {
-            GoldChip("PROMO SPESIAL")
-            Spacer(Modifier.weight(1f))
-            Text("Hari Ini Saja", fontSize = 11.sp, color = Color.White.copy(alpha = 0.85f))
-          }
-          Spacer(Modifier.height(10.dp))
-          Text("Hemat Berdua Diskon 30%!", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-          Text("2x Mie Ayam Spesial + 2x Es Teh Manis segar pelepas dahaga.", fontSize = 12.sp, color = Color.White.copy(alpha = 0.9f))
-          Spacer(Modifier.height(12.dp))
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Rp 48.000", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = ArsyGoldSoft)
-            Spacer(Modifier.width(8.dp))
-            Text("Rp 68.000", fontSize = 13.sp, color = Color.White.copy(alpha = 0.6f))
-            Spacer(Modifier.weight(1f))
-            Box(Modifier.clip(RoundedCornerShape(12.dp)).background(ArsyGold).clickable(onClick = onGoMenu).padding(horizontal = 14.dp, vertical = 10.dp)) {
-              Text("Klaim & Pesan", fontWeight = FontWeight.Bold, color = Color(0xFF4A2412), fontSize = 13.sp)
+      Column(Modifier.padding(horizontal = 16.dp)) {
+        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))) {
+          Image(
+            painter = painterResource(R.drawable.mie_ayam_spesial),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize()
+          )
+          Box(
+            Modifier.matchParentSize().background(
+              androidx.compose.ui.graphics.Brush.horizontalGradient(
+                listOf(Color(0xF0743A18), Color(0x9C8A4513), Color(0x33B4530A))
+              )
+            )
+          )
+          Column(Modifier.padding(18.dp)) {
+            Row {
+              GoldChip("PROMO SPESIAL")
+              Spacer(Modifier.weight(1f))
+              Text("Hari Ini Saja", fontSize = 11.sp, color = Color.White.copy(alpha = 0.85f))
+            }
+            Spacer(Modifier.height(10.dp))
+            Text("Hemat Berdua Diskon 30%!", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+            Text("2x Mie Ayam Spesial + 2x Es Teh Manis segar pelepas dahaga.", fontSize = 12.sp, color = Color.White.copy(alpha = 0.9f))
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Text("Rp 48.000", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = ArsyGoldSoft)
+              Spacer(Modifier.width(8.dp))
+              Text("Rp 68.000", fontSize = 13.sp, color = Color.White.copy(alpha = 0.6f))
+              Spacer(Modifier.weight(1f))
+              Box(Modifier.clip(RoundedCornerShape(12.dp)).background(ArsyGold).clickable(onClick = onGoMenu).padding(horizontal = 14.dp, vertical = 10.dp)) {
+                Text("Klaim & Pesan", fontWeight = FontWeight.Bold, color = Color(0xFF4A2412), fontSize = 13.sp)
+              }
             }
           }
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+          Box(Modifier.width(18.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(MaterialTheme.colorScheme.primary))
+          Spacer(Modifier.width(5.dp))
+          Box(Modifier.size(5.dp).clip(CircleShape).background(ArsyTextMuted.copy(alpha = 0.35f)))
+          Spacer(Modifier.width(5.dp))
+          Box(Modifier.size(5.dp).clip(CircleShape).background(ArsyTextMuted.copy(alpha = 0.35f)))
         }
       }
     }
@@ -264,8 +321,8 @@ fun CustomerHomeScreen(
           text = "Chat WhatsApp Warung Mie Ayam",
           onClick = { openWhatsApp(context, shopConfig.nomorWa, "Halo ${shopConfig.namaWarung}, saya ingin bertanya.") },
           icon = Icons.Filled.Storefront,
-          containerColor = ArsyPeach,
-          contentColor = MaterialTheme.colorScheme.primary
+          containerColor = Color(0xFFEFE9E1),
+          contentColor = MaterialTheme.colorScheme.onBackground
         )
       }
     }
@@ -291,7 +348,7 @@ private fun Modifier.border1(): Modifier = this.then(
 @Composable
 private fun categoryIcon(cat: String): ImageVector = when (cat) {
   "Semua" -> Icons.Filled.Apps
-  "Mie Ayam" -> Icons.Filled.Restaurant
+  "Mie Ayam" -> Icons.Filled.RamenDining
   "Best Seller" -> Icons.Filled.LocalFireDepartment
   "Topping" -> Icons.Filled.AddCircle
   "Minuman" -> Icons.Filled.Coffee
@@ -314,16 +371,30 @@ private fun HomeListItem(item: MenuItemEntity, onClick: () -> Unit, onAdd: () ->
     onClick = onClick
   ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-      MenuPhoto(item, Modifier.size(78.dp))
+      Box {
+        MenuPhoto(item, Modifier.size(78.dp))
+        homeBadge(item.id)?.let { (label, bg, fg) ->
+          Box(
+            Modifier.align(Alignment.TopStart).padding(4.dp)
+              .clip(RoundedCornerShape(6.dp)).background(bg)
+              .padding(horizontal = 6.dp, vertical = 2.dp)
+          ) {
+            Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = fg)
+          }
+        }
+      }
       Spacer(Modifier.width(12.dp))
       Column(Modifier.weight(1f)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
           Text(item.nama, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-          Icon(Icons.Filled.Favorite, null, tint = ArsyGold, modifier = Modifier.size(14.dp))
+          Icon(Icons.Filled.Star, null, tint = ArsyGold, modifier = Modifier.size(14.dp))
           Spacer(Modifier.width(2.dp))
           Text("4.9", fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
         Text(item.deskripsi.ifBlank { "Racikan spesial warung Arsy" }, fontSize = 12.sp, color = ArsyTextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        homeOrdersLabel(item.id)?.let {
+          Text(it, fontSize = 10.5.sp, color = ArsyTextMuted)
+        }
         Spacer(Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
           Text(rupiah(item.harga), fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, fontSize = 14.sp, modifier = Modifier.weight(1f))
@@ -337,6 +408,44 @@ private fun HomeListItem(item: MenuItemEntity, onClick: () -> Unit, onAdd: () ->
         }
       }
     }
+  }
+}
+
+private fun homeBadge(id: Int): Triple<String, Color, Color>? = when (id) {
+  1 -> Triple("Favorit", Color(0xFFC62828), Color.White)
+  2 -> Triple("Yamin", ArsyGold, Color(0xFF4A2412))
+  5 -> Triple("Kriuk", Color.White, Color(0xFF4A2412))
+  else -> null
+}
+
+private fun homeOrdersLabel(id: Int): String? = when (id) {
+  1 -> "1.2rb+ pesanan dibuat"
+  2 -> "890+ pesanan dibuat"
+  5 -> "2.1rb+ terjual"
+  else -> null
+}
+
+@Composable
+private fun OpenHoursPill(jamBuka: String) {
+  val jam = Regex("\\d{1,2}[.:]\\d{2}\\s*[-–]\\s*\\d{1,2}[.:]\\d{2}")
+    .find(jamBuka)?.value?.replace(" ", "")?.replace('-', '–') ?: ""
+  Row(
+    Modifier
+      .clip(RoundedCornerShape(50))
+      .background(Color.White)
+      .border(1.dp, ArsyCardBorder, RoundedCornerShape(50))
+      .padding(horizontal = 10.dp, vertical = 6.dp),
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    Box(Modifier.size(6.dp).clip(CircleShape).background(ArsySuccess))
+    Spacer(Modifier.width(6.dp))
+    Text(
+      if (jam.isBlank()) "Buka Setiap Hari" else "Buka ($jam)",
+      fontSize = 10.5.sp,
+      fontWeight = FontWeight.SemiBold,
+      color = MaterialTheme.colorScheme.onBackground,
+      maxLines = 1
+    )
   }
 }
 

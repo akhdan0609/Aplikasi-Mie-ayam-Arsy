@@ -168,8 +168,21 @@ fun MenuPhoto(
   contentScale: ContentScale = ContentScale.Crop
 ) {
   val decoded = androidx.compose.runtime.remember(item.imageData) { decodeMenuImage(item.imageData) }
+  val context = androidx.compose.ui.platform.LocalContext.current
+  val resPhoto = androidx.compose.runtime.remember(item.imageData) {
+    if (item.imageData.startsWith("res:")) {
+      val id = context.resources.getIdentifier(item.imageData.removePrefix("res:"), "drawable", context.packageName)
+      if (id != 0) id else null
+    } else null
+  }
   Box(modifier = modifier.clip(shape).background(ArsyPeach), contentAlignment = Alignment.Center) {
     when {
+      resPhoto != null -> Image(
+        painter = androidx.compose.ui.res.painterResource(resPhoto),
+        contentDescription = item.nama,
+        modifier = Modifier.fillMaxSize().clip(shape),
+        contentScale = contentScale
+      )
       decoded != null -> Image(bitmap = decoded, contentDescription = item.nama, modifier = Modifier.fillMaxSize().clip(shape), contentScale = contentScale)
       item.imageUrl.isNotBlank() -> AsyncImage(
         model = ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current).data(item.imageUrl).crossfade(true).build(),
