@@ -156,6 +156,7 @@ fun CustomerHomeScreen(
 
   val bestSellers = remember(allItems) { allItems.filter { it.isBestSeller }.ifEmpty { allItems }.take(6) }
   val activePromos = remember(promos) { promos.filter { it.aktif } }
+  val selectedCategory by vm.selectedCategory.collectAsStateWithLifecycle()
   val categories = listOf("Semua", "Mie Ayam", "Best Seller", "Topping", "Minuman")
 
   LazyColumn(
@@ -246,8 +247,14 @@ fun CustomerHomeScreen(
     item {
       LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         items(categories) { cat ->
-          val selected = cat == "Semua"
-          Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(76.dp).clickable(onClick = onGoMenu)) {
+          val selected = cat == selectedCategory
+          Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(76.dp).clickable {
+              vm.setCategory(cat)
+              onGoMenu()
+            }
+          ) {
             Box(
               Modifier.size(60.dp).clip(RoundedCornerShape(18.dp))
                 .background(if (selected) MaterialTheme.colorScheme.primary else categoryTint(cat)),
