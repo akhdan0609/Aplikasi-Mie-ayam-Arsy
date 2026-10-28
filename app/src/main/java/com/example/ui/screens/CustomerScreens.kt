@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.RamenDining
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingBag
@@ -185,7 +186,7 @@ fun CustomerHomeScreen(
           Column(Modifier.weight(1f)) {
             Text("Metode Pemesanan", fontSize = 11.sp, color = ArsyTextMuted)
             Text(
-              if (metode == "Makan di Tempat") "Makan di Tempat • Meja 04" else metode,
+              metode,
               fontSize = 13.sp,
               fontWeight = FontWeight.Bold,
               color = MaterialTheme.colorScheme.onBackground
@@ -277,21 +278,21 @@ fun CustomerHomeScreen(
             Icon(Icons.Filled.Verified, null, tint = MaterialTheme.colorScheme.primary)
           }
           Spacer(Modifier.width(12.dp))
-          Column {
+          Column(Modifier.weight(1f)) {
             Text("Resep Asli Sejak 2018", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground)
             Text("Dimasak segar setiap hari dengan bahan alami.", fontSize = 12.sp, color = ArsyTextMuted)
           }
         }
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-          BadgePill("100% Halal", Icons.Filled.CheckCircle)
-          BadgePill("Tanpa Pengawet", Icons.Filled.CheckCircle)
+          BadgePill("100% Halal", Icons.Filled.CheckCircle, Modifier.weight(1f))
+          BadgePill("Tanpa Pengawet", Icons.Filled.CheckCircle, Modifier.weight(1f))
         }
         Spacer(Modifier.height(12.dp))
         PrimaryButton(
           text = "Chat WhatsApp Warung Mie Ayam",
           onClick = { openWhatsApp(context, shopConfig.nomorWa, "Halo ${shopConfig.namaWarung}, saya ingin bertanya.") },
-          icon = Icons.Filled.Storefront,
+          icon = Icons.Filled.ReceiptLong,
           containerColor = Color(0xFFEFE9E1),
           contentColor = MaterialTheme.colorScheme.onBackground
         )
@@ -301,20 +302,21 @@ fun CustomerHomeScreen(
 }
 
 @Composable
-private fun BadgePill(text: String, icon: ImageVector) {
+private fun BadgePill(text: String, icon: ImageVector, modifier: Modifier = Modifier) {
   Row(
-    Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White).border1().padding(horizontal = 12.dp, vertical = 8.dp),
-    verticalAlignment = Alignment.CenterVertically
+    modifier
+      .clip(RoundedCornerShape(50))
+      .background(Color.White)
+      .border(1.dp, ArsyCardBorder, RoundedCornerShape(50))
+      .padding(horizontal = 12.dp, vertical = 8.dp),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.Center
   ) {
     Icon(icon, null, tint = ArsySuccess, modifier = Modifier.size(16.dp))
     Spacer(Modifier.width(6.dp))
-    Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
+    Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground, maxLines = 1)
   }
 }
-
-private fun Modifier.border1(): Modifier = this.then(
-  Modifier.background(Color.White)
-)
 
 @Composable
 private fun categoryIcon(cat: String): ImageVector = when (cat) {
