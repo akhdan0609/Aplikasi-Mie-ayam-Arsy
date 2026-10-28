@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,12 +31,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
@@ -44,6 +47,7 @@ import androidx.compose.material.icons.filled.DeliveryDining
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.LocationOn
@@ -55,6 +59,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.RamenDining
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Redeem
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingBag
@@ -62,11 +67,15 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -89,11 +98,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.BuildConfig
 import com.example.R
 import com.example.data.model.MenuItemEntity
 import com.example.data.model.PromoSpesial
@@ -945,83 +958,242 @@ fun ProfileScreen(
 ) {
   val context = LocalContext.current
   val shopConfig by vm.shopConfig.collectAsStateWithLifecycle()
-  var notif by remember { mutableStateOf(true) }
-  val points = orders.sumOf { it.total.toInt() } / 1000 * 10
-  val level = (points / 150) + 1
   val prefs = remember { context.getSharedPreferences("profil_pelanggan", Context.MODE_PRIVATE) }
   var namaPelanggan by remember { mutableStateOf(prefs.getString("nama", null) ?: "Pelanggan Arsy") }
   var telepon by remember { mutableStateOf(prefs.getString("telepon", "") ?: "") }
+  var alamat by remember { mutableStateOf(prefs.getString("alamat", null) ?: "Jl. Melati No. 15, RT 04/RW 03, Cilandak Barat, Jakarta Selatan, 12430") }
+  var patokan by remember { mutableStateOf(prefs.getString("patokan", null) ?: "Pagar hitam depan pos ronda") }
+  var pembayaran by remember { mutableStateOf(prefs.getString("pembayaran", null) ?: "QRIS Instan (GoPay / BCA / OVO) & Tunai Kasir") }
+  var notif by remember { mutableStateOf(prefs.getBoolean("notif", true)) }
+  val realPoints = orders.sumOf { it.total.toInt() } / 1000 * 10
+  val points = if (realPoints > 0) realPoints else 350
+  val level = (points / 250) + 1
+  val poinLagi = level * 250 - points
+  val progress = ((points - (level - 1) * 250).toFloat() / 250f).coerceIn(0f, 1f)
   var showEditProfil by remember { mutableStateOf(false) }
+  var showAlamat by remember { mutableStateOf(false) }
+  var showPembayaran by remember { mutableStateOf(false) }
+  var showTukar by remember { mutableStateOf(false) }
+  var showRiwayatPoin by remember { mutableStateOf(false) }
+  var showTentang by remember { mutableStateOf(false) }
   var showKeluar by remember { mutableStateOf(false) }
+  val initials = namaPelanggan.trim().split(Regex("\\s+")).take(2).mapNotNull { it.firstOrNull()?.uppercase() }.joinToString("")
 
   LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
     item {
       Column(Modifier.padding(16.dp)) {
         GoldChip("AKUN PELANGGAN")
         Text("Profil Saya", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
-        Text("Kelola akun dan nikmati promo langganan mie ayam favoritmu.", fontSize = 12.sp, color = ArsyTextMuted)
+        Text("Kelola akun dan nikmati promo langganan mie ayam favoritmu setiap hari.", fontSize = 12.sp, color = ArsyTextMuted)
       }
     }
     item {
       WhiteCard(modifier = Modifier.padding(horizontal = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-          Box(Modifier.size(52.dp).clip(CircleShape).background(ArsyPeach), contentAlignment = Alignment.Center) {
-            Icon(Icons.Filled.Person, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+          Box(Modifier.size(56.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize().clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
+              Text(initials.ifBlank { "PA" }, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+            }
+            Box(
+              Modifier.size(18.dp).align(Alignment.BottomEnd).clip(CircleShape).background(ArsyGold)
+                .border(2.dp, Color.White, CircleShape),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(10.dp))
+            }
           }
           Spacer(Modifier.width(12.dp))
           Column(Modifier.weight(1f)) {
             Text(namaPelanggan, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onBackground)
             Row(verticalAlignment = Alignment.CenterVertically) {
-              Text(telepon.ifBlank { shopConfig.nomorWa }, fontSize = 12.sp, color = ArsyTextMuted)
-              Spacer(Modifier.width(6.dp))
-              Icon(Icons.Filled.CheckCircle, null, tint = ArsySuccess, modifier = Modifier.size(14.dp))
+              if (telepon.isNotBlank()) {
+                Icon(Icons.Filled.Verified, null, tint = ArsySuccess, modifier = Modifier.size(13.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("WA Terverifikasi • $telepon", fontSize = 11.5.sp, color = ArsyTextMuted)
+              } else {
+                Text("Lengkapi nomor WhatsApp kamu", fontSize = 11.5.sp, color = ArsyTextMuted)
+              }
             }
+            Text("Pelanggan Aktif sejak 2022", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = ArsyGold)
           }
         }
         Spacer(Modifier.height(12.dp))
-        PrimaryButton(text = "Ubah Informasi Akun", onClick = { showEditProfil = true }, containerColor = ArsyPeach, contentColor = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
+        PrimaryButton(
+          text = "Ubah Informasi Akun",
+          icon = Icons.Filled.Edit,
+          onClick = { showEditProfil = true },
+          containerColor = Color(0xFFF1EAE0),
+          contentColor = MaterialTheme.colorScheme.onBackground,
+          modifier = Modifier.fillMaxWidth()
+        )
       }
     }
     item {
       Box(
         Modifier.fillMaxWidth().padding(16.dp).clip(RoundedCornerShape(20.dp))
-          .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF7A3E1E), Color(0xFFB4530A)))).padding(18.dp)
+          .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF63381A), Color(0xFF9A5C1C)))).padding(18.dp)
       ) {
+        Icon(
+          Icons.Filled.WorkspacePremium, null,
+          tint = Color.White.copy(alpha = 0.14f),
+          modifier = Modifier.align(Alignment.CenterEnd).size(92.dp)
+        )
         Column {
           Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Member Setia Arsy", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            GoldChip("LEVEL $level")
+            Text("Member Setia Arsy", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.weight(1f))
+            Box(Modifier.clip(RoundedCornerShape(50)).background(ArsyGold).padding(horizontal = 10.dp, vertical = 4.dp)) {
+              Text("LEVEL $level", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF4A2412))
+            }
           }
           Spacer(Modifier.height(8.dp))
-          Text("$points", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+          Text("$points", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
           Text("Arsy Poin", fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
           Spacer(Modifier.height(10.dp))
-          Text("Kumpulkan 150 poin lagi untuk dapat 1 Porsi Mie Ayam Spesial Gratis!", fontSize = 12.sp, color = ArsyGoldSoft)
+          Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.25f))) {
+            Box(Modifier.fillMaxWidth(progress).fillMaxHeight().clip(RoundedCornerShape(50)).background(ArsyGold))
+          }
+          Spacer(Modifier.height(8.dp))
+          Text(
+            buildAnnotatedString {
+              append("Kumpulkan ")
+              withStyle(style = SpanStyle(color = ArsyGold, fontWeight = FontWeight.Bold)) { append("$poinLagi poin lagi") }
+              append(" untuk dapat ")
+              withStyle(style = SpanStyle(color = Color.White, fontWeight = FontWeight.Bold, textDecoration = TextDecoration.Underline)) {
+                append("1 Porsi Mie Ayam Spesial Gratis!")
+              }
+            },
+            fontSize = 12.sp, color = Color.White.copy(alpha = 0.9f)
+          )
+          Spacer(Modifier.height(14.dp))
+          Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(
+              onClick = { showTukar = true },
+              colors = ButtonDefaults.buttonColors(containerColor = ArsyGold, contentColor = Color(0xFF4A2412)),
+              shape = RoundedCornerShape(12.dp),
+              contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+              modifier = Modifier.weight(1f)
+            ) {
+              Icon(Icons.Filled.Redeem, null, modifier = Modifier.size(16.dp))
+              Spacer(Modifier.width(6.dp))
+              Text("Tukar Promo", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+            Button(
+              onClick = { showRiwayatPoin = true },
+              colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.18f), contentColor = Color.White),
+              shape = RoundedCornerShape(12.dp),
+              contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+              modifier = Modifier.weight(1f)
+            ) {
+              Icon(Icons.Filled.History, null, modifier = Modifier.size(16.dp))
+              Spacer(Modifier.width(6.dp))
+              Text("Riwayat Poin", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+          }
+        }
+      }
+    }
+    item { SectionHeader("Preferensi Antar & Bayar") }
+    item {
+      WhiteCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Row(verticalAlignment = Alignment.Top) {
+          Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(ArsyPeach), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.LocationOn, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+          }
+          Spacer(Modifier.width(12.dp))
+          Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Text("Alamat Pengantaran", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
+              Text("Ubah", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { showAlamat = true })
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(alamat, fontSize = 11.5.sp, color = ArsyTextMuted)
+            Spacer(Modifier.height(8.dp))
+            Box(
+              Modifier.clip(RoundedCornerShape(6.dp)).background(Color.White)
+                .border(1.dp, ArsyCardBorder, RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 3.dp)
+            ) {
+              Text("RUMAH", fontSize = 9.5.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Icon(Icons.Filled.Check, null, tint = ArsySuccess, modifier = Modifier.size(13.dp))
+              Spacer(Modifier.width(4.dp))
+              Text("Patokan: $patokan", fontSize = 11.sp, color = Color(0xFF2E7D6B))
+            }
+          }
+        }
+        Spacer(Modifier.height(12.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(ArsyCardBorder))
+        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.Top) {
+          Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(ArsyPeach), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.QrCode2, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+          }
+          Spacer(Modifier.width(12.dp))
+          Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Text("Metode Pembayaran", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
+              Text("Ganti", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { showPembayaran = true })
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(pembayaran, fontSize = 11.5.sp, color = ArsyTextMuted)
+          }
         }
       }
     }
     item { SectionHeader("Aktivitas & Bantuan") }
     item {
       WhiteCard(modifier = Modifier.padding(horizontal = 16.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
-        ProfileRow(Icons.Filled.Favorite, "Menu Favorit Saya", "Mie Ayam Spesial Komplit", null, onClick = onGoMenu)
-        ProfileRow(Icons.Filled.Outbox, "Riwayat Pesanan", "${orders.size} pesanan sebelumnya", null, onClick = onOpenOrders)
-        ProfileRow(Icons.Filled.Storefront, "Layanan Pelanggan WhatsApp", "Respons cepat & bantuan online", null) {
+        ProfileRow(
+          Icons.Filled.Favorite, "Menu Favorit Saya", "Mie Ayam Spesial Komplit",
+          containerColor = Color(0xFFFDE3E3), iconTint = Color(0xFFC62828), onClick = onGoMenu
+        )
+        ProfileRow(
+          Icons.Filled.History, "Riwayat Pesanan",
+          if (orders.isEmpty()) "Belum ada pesanan tercatat" else "${orders.size} pesanan tercatat",
+          onClick = onOpenOrders
+        )
+        ProfileRow(
+          Icons.Filled.Storefront, "Layanan Pelanggan WhatsApp", "Respons cepat & bantuan online",
+          containerColor = Color(0xFFE6F4EA), iconTint = Color(0xFF2E7D32), showOnlineDot = true
+        ) {
           openWhatsApp(context, shopConfig.nomorWa, "Halo ${shopConfig.namaWarung}, saya butuh bantuan.")
         }
-        ProfileRow(Icons.Filled.Lock, "Masuk Mode Pengelola", "Kelola menu, stok & laporan", null, onClick = onOpenAdminLogin)
+        ProfileRow(
+          Icons.Filled.RamenDining, "Tentang Resep Mie Ayam Arsy", "Cerita & bahan segar di balik menu",
+          onClick = { showTentang = true }
+        )
+        ProfileRow(Icons.Filled.Lock, "Masuk Mode Pengelola", "Kelola menu, stok & laporan", onClick = onOpenAdminLogin)
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-          Icon(Icons.Filled.Notifications, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+          Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(ArsyPeach), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.Notifications, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+          }
           Spacer(Modifier.width(12.dp))
           Column(Modifier.weight(1f)) {
             Text("Notifikasi Promo & Pesanan", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
             Text("Kabar diskon dan update kurir", fontSize = 11.5.sp, color = ArsyTextMuted)
           }
-          Switch(checked = notif, onCheckedChange = { notif = it }, colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary))
+          Switch(
+            checked = notif,
+            onCheckedChange = {
+              notif = it
+              prefs.edit().putBoolean("notif", it).apply()
+              Toast.makeText(context, if (it) "Notifikasi diaktifkan" else "Notifikasi dimatikan", Toast.LENGTH_SHORT).show()
+            },
+            colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary)
+          )
         }
       }
     }
     item {
-      Box(Modifier.fillMaxWidth().padding(16.dp).clip(RoundedCornerShape(14.dp)).background(Color.White).clickable { showKeluar = true }.padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
+      Row(
+        Modifier.fillMaxWidth().padding(16.dp).clip(RoundedCornerShape(14.dp)).background(Color.White)
+          .clickable { showKeluar = true }.padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+      ) {
+        Icon(Icons.AutoMirrored.Filled.Logout, null, tint = ArsyDanger, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
         Text("Keluar dari Akun", color = ArsyDanger, fontWeight = FontWeight.Bold, fontSize = 14.sp)
       }
     }
@@ -1032,7 +1204,7 @@ fun ProfileScreen(
           Spacer(Modifier.width(4.dp))
           Text("100% Halal, Higienis & Dibuat Segar Setiap Hari", fontSize = 11.5.sp, color = ArsyTextMuted)
         }
-        Text("Mie Ayam Arsy Mobile", fontSize = 11.sp, color = ArsyTextMuted)
+        Text("Mie Ayam Arsy Mobile v${BuildConfig.VERSION_NAME}", fontSize = 11.sp, color = ArsyTextMuted)
       }
     }
   }
@@ -1051,6 +1223,61 @@ fun ProfileScreen(
       }
     )
   }
+  if (showAlamat) {
+    AlamatDialog(
+      initialAlamat = alamat,
+      initialPatokan = patokan,
+      onDismiss = { showAlamat = false },
+      onSave = { a, p ->
+        prefs.edit().putString("alamat", a).putString("patokan", p).apply()
+        alamat = a
+        patokan = p
+        showAlamat = false
+        Toast.makeText(context, "Alamat pengantaran disimpan", Toast.LENGTH_SHORT).show()
+      }
+    )
+  }
+  if (showPembayaran) {
+    PembayaranDialog(
+      current = pembayaran,
+      onDismiss = { showPembayaran = false },
+      onSave = { metode ->
+        prefs.edit().putString("pembayaran", metode).apply()
+        pembayaran = metode
+        showPembayaran = false
+        Toast.makeText(context, "Metode pembayaran disimpan", Toast.LENGTH_SHORT).show()
+      }
+    )
+  }
+  if (showTukar) {
+    TukarPromoDialog(
+      points = points,
+      onDismiss = { showTukar = false },
+      onRedeem = { poinButuh, hadiah ->
+        showTukar = false
+        openWhatsApp(
+          context, shopConfig.nomorWa,
+          "Halo ${shopConfig.namaWarung}, saya $namaPelanggan ingin menukar $poinButuh Arsy Poin dengan hadiah: $hadiah."
+        )
+      }
+    )
+  }
+  if (showRiwayatPoin) {
+    RiwayatPoinDialog(orders = orders, saldo = points, onDismiss = { showRiwayatPoin = false })
+  }
+  if (showTentang) {
+    AlertDialog(
+      onDismissRequest = { showTentang = false },
+      title = { Text("Resep Asli Sejak 2018", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+      text = {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+          Text("Mie Ayam Arsy dibuat dari resep keluarga yang dijaga sejak 2018. Ayam dipotong segar setiap pagi dan diolah tanpa pengawet.")
+          Text("Mienya ditarik manual setiap hari supaya tetap kenyal, dan sayurannya langsung dari pasar tradisional terdekat.")
+        }
+      },
+      confirmButton = { TextButton(onClick = { showTentang = false }) { Text("Tutup") } }
+    )
+  }
   if (showKeluar) {
     AlertDialog(
       onDismissRequest = { showKeluar = false },
@@ -1061,6 +1288,10 @@ fun ProfileScreen(
           prefs.edit().clear().apply()
           namaPelanggan = "Pelanggan Arsy"
           telepon = ""
+          alamat = "Jl. Melati No. 15, RT 04/RW 03, Cilandak Barat, Jakarta Selatan, 12430"
+          patokan = "Pagar hitam depan pos ronda"
+          pembayaran = "QRIS Instan (GoPay / BCA / OVO) & Tunai Kasir"
+          notif = true
           showKeluar = false
           Toast.makeText(context, "Anda telah keluar dari akun", Toast.LENGTH_SHORT).show()
         }) { Text("Keluar", color = ArsyDanger) }
@@ -1107,20 +1338,178 @@ private fun EditProfilDialog(
 }
 
 @Composable
-private fun ProfileRow(icon: ImageVector, title: String, subtitle: String, trailing: String?, onClick: (() -> Unit)? = null) {
+private fun ProfileRow(
+  icon: ImageVector,
+  title: String,
+  subtitle: String,
+  containerColor: Color = ArsyPeach,
+  iconTint: Color = MaterialTheme.colorScheme.primary,
+  showOnlineDot: Boolean = false,
+  onClick: (() -> Unit)? = null
+) {
   Row(
     Modifier.fillMaxWidth().clickable(enabled = onClick != null) { onClick?.invoke() }.padding(horizontal = 16.dp, vertical = 12.dp),
     verticalAlignment = Alignment.CenterVertically
   ) {
-    Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(ArsyPeach), contentAlignment = Alignment.Center) {
-      Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+    Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(containerColor), contentAlignment = Alignment.Center) {
+      Icon(icon, null, tint = iconTint, modifier = Modifier.size(18.dp))
     }
     Spacer(Modifier.width(12.dp))
     Column(Modifier.weight(1f)) {
-      Text(title, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(title, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
+        if (showOnlineDot) {
+          Spacer(Modifier.width(6.dp))
+          Box(Modifier.size(7.dp).clip(CircleShape).background(ArsySuccess))
+        }
+      }
       Text(subtitle, fontSize = 11.5.sp, color = ArsyTextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
-    if (trailing != null) Text(trailing, fontSize = 12.sp, color = ArsyTextMuted)
     Icon(Icons.Filled.ArrowForward, null, tint = ArsyTextMuted, modifier = Modifier.size(16.dp))
   }
+}
+
+@Composable
+private fun AlamatDialog(
+  initialAlamat: String,
+  initialPatokan: String,
+  onDismiss: () -> Unit,
+  onSave: (String, String) -> Unit
+) {
+  var alamat by remember { mutableStateOf(initialAlamat) }
+  var patokan by remember { mutableStateOf(initialPatokan) }
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    title = { Text("Alamat Pengantaran", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+    text = {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+          value = alamat,
+          onValueChange = { alamat = it },
+          label = { Text("Alamat Lengkap") },
+          minLines = 2,
+          modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+          value = patokan,
+          onValueChange = { patokan = it },
+          label = { Text("Patokan / Catatan Kurir") },
+          singleLine = true,
+          modifier = Modifier.fillMaxWidth()
+        )
+        Text("Disimpan hanya di perangkat ini.", fontSize = 11.sp, color = ArsyTextMuted)
+      }
+    },
+    confirmButton = { TextButton(onClick = { onSave(alamat.trim().ifBlank { initialAlamat }, patokan.trim()) }) { Text("Simpan") } },
+    dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } }
+  )
+}
+
+@Composable
+private fun PembayaranDialog(current: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+  val opsi = listOf(
+    "QRIS Instan (GoPay / BCA / OVO) & Tunai Kasir",
+    "Transfer Bank BCA / BRI",
+    "Tunai saat kurir tiba"
+  )
+  var pilih by remember { mutableStateOf(if (opsi.contains(current)) current else opsi[0]) }
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    title = { Text("Metode Pembayaran", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+    text = {
+      Column {
+        opsi.forEach { o ->
+          Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { pilih = o }.padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            RadioButton(selected = pilih == o, onClick = { pilih = o })
+            Text(o, fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground)
+          }
+        }
+        Text("Dipakai sebagai default saat checkout.", fontSize = 11.sp, color = ArsyTextMuted)
+      }
+    },
+    confirmButton = { TextButton(onClick = { onSave(pilih) }) { Text("Simpan") } },
+    dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } }
+  )
+}
+
+@Composable
+private fun TukarPromoDialog(points: Int, onDismiss: () -> Unit, onRedeem: (Int, String) -> Unit) {
+  val rewards = listOf(
+    Triple(500, "1 Porsi Mie Ayam Spesial Gratis", "500 poin"),
+    Triple(300, "Es Teh Manis Jumbo Gratis", "300 poin"),
+    Triple(200, "Diskon Rp5.000 (min. belanja Rp25.000)", "200 poin")
+  )
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    title = { Text("Tukar Arsy Poin", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+    text = {
+      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Saldo poin kamu: $points poin", fontSize = 12.sp, color = ArsyTextMuted)
+        rewards.forEach { (butuh, hadiah, label) ->
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(ArsyPeach), contentAlignment = Alignment.Center) {
+              Icon(Icons.Filled.Redeem, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+              Text(hadiah, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
+              Text(label, fontSize = 11.sp, color = ArsyTextMuted)
+            }
+            Button(
+              onClick = { onRedeem(butuh, hadiah) },
+              enabled = points >= butuh,
+              colors = ButtonDefaults.buttonColors(containerColor = ArsyGold, contentColor = Color(0xFF4A2412)),
+              shape = RoundedCornerShape(10.dp),
+              contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+              modifier = Modifier.height(32.dp)
+            ) {
+              Text("Tukar", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+          }
+        }
+        Text("Penukaran dikonfirmasi lewat WhatsApp kasir.", fontSize = 11.sp, color = ArsyTextMuted)
+      }
+    },
+    confirmButton = { TextButton(onClick = onDismiss) { Text("Tutup") } }
+  )
+}
+
+@Composable
+private fun RiwayatPoinDialog(orders: List<OrderRecord>, saldo: Int, onDismiss: () -> Unit) {
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    title = { Text("Riwayat Arsy Poin", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
+    text = {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Saldo saat ini: $saldo poin", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = ArsyGold)
+        if (orders.isEmpty()) {
+          listOf(
+            "+200 poin" to "Welcome bonus Member Arsy",
+            "+100 poin" to "Pesanan Mie Ayam Spesial Komplit",
+            "+50 poin" to "Undang teman download aplikasi"
+          ).forEach { (poin, ket) ->
+            Row(verticalAlignment = Alignment.Top) {
+              Text(poin, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = ArsySuccess, modifier = Modifier.width(84.dp))
+              Text(ket, fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground)
+            }
+          }
+          Text("Riwayat akan terisi otomatis dari pesanan asli kamu.", fontSize = 11.sp, color = ArsyTextMuted)
+        } else {
+          orders.takeLast(8).reversed().forEach { o ->
+            Row(verticalAlignment = Alignment.Top) {
+              Text("+${o.total / 1000 * 10} poin", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = ArsySuccess, modifier = Modifier.width(84.dp))
+              Column {
+                Text(o.code, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
+                Text("${o.timeLabel} • ${o.mode}", fontSize = 11.sp, color = ArsyTextMuted)
+              }
+            }
+          }
+        }
+      }
+    },
+    confirmButton = { TextButton(onClick = onDismiss) { Text("Tutup") } }
+  )
 }
